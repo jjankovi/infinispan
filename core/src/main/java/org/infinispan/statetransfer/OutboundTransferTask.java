@@ -23,6 +23,15 @@
 
 package org.infinispan.statetransfer;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.FutureTask;
+
 import org.infinispan.commands.CommandsFactory;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.container.DataContainer;
@@ -37,13 +46,8 @@ import org.infinispan.util.ReadOnlyDataContainerBackedKeySet;
 import org.infinispan.util.concurrent.AggregatingNotifyingFutureBuilder;
 import org.infinispan.util.concurrent.ConcurrentMapFactory;
 import org.infinispan.util.concurrent.NotifyingNotifiableFuture;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.*;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.FutureTask;
 
 /**
  * Outbound state transfer task. Pushes data segments to another cluster member on request. Instances of
@@ -55,7 +59,7 @@ import java.util.concurrent.FutureTask;
  */
 public class OutboundTransferTask implements Runnable {
 
-   private static final Log log = LogFactory.getLog(OutboundTransferTask.class);
+   private static final ALogger log = LogFactory.getLog(OutboundTransferTask.class);
 
    private final boolean trace = log.isTraceEnabled();
 
@@ -175,16 +179,17 @@ public class OutboundTransferTask implements Runnable {
                            sendEntry(ice, segmentId);
                         }
                      } catch (CacheLoaderException e) {
-                        log.failedLoadingValueFromCacheStore(key, e);
+                        log.warn("Failed loading value for key " + key + " from cache store", e);
                      }
                   }
                }
             } catch (CacheLoaderException e) {
-               log.failedLoadingKeysFromCacheStore(e);
+               log.warn("Failed loading keys from cache store", e);
             }
          } else {
             if (trace) {
-               log.tracef("No cache store or the cache store is shared, no need to send any stored cache entries for segments: %s", segments);
+               log.trace("No cache store or the cache store is shared, " +
+               		"no need to send any stored cache entries for segments: " + segments);
             }
          }
 
@@ -197,7 +202,7 @@ public class OutboundTransferTask implements Runnable {
          }
       }
       if (trace) {
-         log.tracef("Outbound transfer of segments %s to %s is complete", segments, destination);
+         log.trace("Outbound transfer of segments " + segments + " to " + destination + " is complete");
       }
    }
 
@@ -250,7 +255,9 @@ public class OutboundTransferTask implements Runnable {
 
       if (!chunks.isEmpty() || isLast) {
          if (trace) {
-            log.tracef("Sending %d cache entries from segments %s to node %s", accumulatedEntries, entriesBySegment.keySet(), destination);
+            log.trace("Sending " + accumulatedEntries + 
+            		" cache entries from segments " + 
+            		entriesBySegment.keySet() + " to node " + destination);
          }
 
          //todo [anistor] send back the received topologyId or my local one?
@@ -267,7 +274,7 @@ public class OutboundTransferTask implements Runnable {
     */
    public void cancelSegments(Set<Integer> cancelledSegments) {
       if (trace) {
-         log.tracef("Cancelling outbound transfer of segments %s to %s", cancelledSegments, destination);
+         log.trace("Cancelling outbound transfer of segments " + cancelledSegments + " to " +  destination);
       }
       if (segments.removeAll(cancelledSegments)) {
          entriesBySegment.keySet().removeAll(cancelledSegments);  // here we do not update accumulatedEntries but this inaccuracy does not cause any harm

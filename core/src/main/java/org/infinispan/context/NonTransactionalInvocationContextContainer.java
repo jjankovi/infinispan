@@ -24,8 +24,7 @@ import org.infinispan.context.impl.NonTxInvocationContext;
 import org.infinispan.context.impl.RemoteTxInvocationContext;
 import org.infinispan.remoting.transport.Address;
 import org.infinispan.transaction.RemoteTransaction;
-
-import javax.transaction.Transaction;
+import org.transaction.Transaction;
 
 /**
  * Invocation Context container to be used for non-transactional caches.

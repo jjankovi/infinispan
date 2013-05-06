@@ -19,18 +19,8 @@
 
 package org.infinispan.marshall.jboss;
 
-import org.infinispan.io.ByteBuffer;
-import org.infinispan.io.ExposedByteArrayOutputStream;
-import org.infinispan.marshall.AbstractMarshaller;
-import org.infinispan.marshall.StreamingMarshaller;
-import org.infinispan.util.logging.BasicLogFactory;
-import org.jboss.logging.BasicLogger;
-import org.jboss.marshalling.ExceptionListener;
-import org.jboss.marshalling.Marshalling;
-import org.jboss.marshalling.MarshallingConfiguration;
-import org.jboss.marshalling.TraceInformation;
-import org.jboss.marshalling.Unmarshaller;
-import org.jboss.marshalling.reflect.SunReflectiveCreator;
+import static org.infinispan.util.ReflectionUtil.EMPTY_CLASS_ARRAY;
+import static org.infinispan.util.Util.EMPTY_OBJECT_ARRAY;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -42,8 +32,18 @@ import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.net.URL;
 
-import static org.infinispan.util.ReflectionUtil.EMPTY_CLASS_ARRAY;
-import static org.infinispan.util.Util.EMPTY_OBJECT_ARRAY;
+import org.infinispan.io.ByteBuffer;
+import org.infinispan.io.ExposedByteArrayOutputStream;
+import org.infinispan.marshall.AbstractMarshaller;
+import org.infinispan.marshall.StreamingMarshaller;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
+import org.jboss.marshalling.ExceptionListener;
+import org.jboss.marshalling.Marshalling;
+import org.jboss.marshalling.MarshallingConfiguration;
+import org.jboss.marshalling.TraceInformation;
+import org.jboss.marshalling.Unmarshaller;
+import org.jboss.marshalling.reflect.SunReflectiveCreator;
 
 /**
  * Common parent for both embedded and standalone JBoss Marshalling-based marshallers.
@@ -55,7 +55,7 @@ import static org.infinispan.util.Util.EMPTY_OBJECT_ARRAY;
  */
 public abstract class AbstractJBossMarshaller extends AbstractMarshaller implements StreamingMarshaller {
 
-   protected static final BasicLogger log = BasicLogFactory.getLog(AbstractJBossMarshaller.class);
+   protected static final ALogger log = LogFactory.getLog(AbstractJBossMarshaller.class);
    protected static final boolean trace = log.isTraceEnabled();
    protected static final JBossMarshallerFactory factory = new JBossMarshallerFactory();
    protected static final int DEF_INSTANCE_COUNT = 16;
@@ -151,8 +151,8 @@ public abstract class AbstractJBossMarshaller extends AbstractMarshaller impleme
       Unmarshaller unmarshaller = instanceHolder.getUnmarshaller();
 
       if (trace)
-         log.tracef("Start unmarshaller after retrieving marshaller from %s",
-                   isReentrant ? "factory" : "thread local");
+         log.trace("Start unmarshaller after retrieving marshaller from " + 
+                   (isReentrant ? "factory" : "thread local"));
 
       unmarshaller.start(Marshalling.createByteInput(is));
       return unmarshaller;
@@ -181,8 +181,7 @@ public abstract class AbstractJBossMarshaller extends AbstractMarshaller impleme
       if (containsMarshallable) {
          boolean marshallable = marshallableTypeHints.isMarshallable(clazz);
          if (trace)
-            log.tracef("Marshallable type '%s' known and is marshallable=%b",
-               clazz.getName(), marshallable);
+            log.trace("Marshallable type '" + clazz.getName() + "' known and is marshallable=" + marshallable);
 
          return marshallable;
       } else {

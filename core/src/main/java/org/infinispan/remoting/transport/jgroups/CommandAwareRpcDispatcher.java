@@ -22,22 +22,40 @@
  */
 package org.infinispan.remoting.transport.jgroups;
 
+import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.infinispan.remoting.transport.jgroups.JGroupsTransport.fromJGroupsAddress;
+import static org.infinispan.util.Util.formatString;
+import static org.infinispan.util.Util.prettyPrintTime;
+import static org.infinispan.util.Util.rewrapAsCacheException;
+
+import java.io.NotSerializableException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
 import net.jcip.annotations.GuardedBy;
+
 import org.infinispan.CacheException;
 import org.infinispan.commands.ReplicableCommand;
 import org.infinispan.commands.remote.CacheRpcCommand;
 import org.infinispan.commands.remote.SingleRpcCommand;
 import org.infinispan.factories.GlobalComponentRegistry;
-import org.infinispan.statetransfer.StateRequestCommand;
-import org.infinispan.statetransfer.StateResponseCommand;
 import org.infinispan.remoting.InboundInvocationHandler;
 import org.infinispan.remoting.RpcException;
 import org.infinispan.remoting.responses.ExceptionResponse;
 import org.infinispan.remoting.responses.Response;
+import org.infinispan.statetransfer.StateRequestCommand;
+import org.infinispan.statetransfer.StateResponseCommand;
 import org.infinispan.topology.CacheTopologyControlCommand;
 import org.infinispan.util.Util;
 import org.infinispan.util.concurrent.TimeoutException;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 import org.infinispan.xsite.BackupReceiverRepository;
 import org.jgroups.Address;
@@ -57,21 +75,6 @@ import org.jgroups.util.NotifyingFuture;
 import org.jgroups.util.Rsp;
 import org.jgroups.util.RspList;
 
-import java.io.NotSerializableException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-
-import static java.lang.String.format;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.infinispan.remoting.transport.jgroups.JGroupsTransport.fromJGroupsAddress;
-import static org.infinispan.util.Util.*;
-
 /**
  * A JGroups RPC dispatcher that knows how to deal with {@link ReplicableCommand}s.
  *
@@ -82,7 +85,7 @@ public class CommandAwareRpcDispatcher extends RpcDispatcher {
 
    private final ExecutorService asyncExecutor;
    private final InboundInvocationHandler inboundInvocationHandler;
-   private static final Log log = LogFactory.getLog(CommandAwareRpcDispatcher.class);
+   private static final ALogger log = LogFactory.getLog(CommandAwareRpcDispatcher.class);
    private static final boolean trace = log.isTraceEnabled();
    private static final boolean FORCE_MCAST = Boolean.getBoolean("infinispan.unsafe.force_multicast");
    private final JGroupsTransport transport;
@@ -116,7 +119,7 @@ public class CommandAwareRpcDispatcher extends RpcDispatcher {
 
    private boolean isValid(Message req) {
       if (req == null || req.getLength() == 0) {
-         log.msgOrMsgBufferEmpty();
+         log.error("Message or message buffer is null or empty.");
          return false;
       }
 
@@ -217,13 +220,13 @@ public class CommandAwareRpcDispatcher extends RpcDispatcher {
                return executeCommandFromLocalCluster(cmd, req);
             }
          } catch (InterruptedException e) {
-            log.warnf("Shutdown while handling command %s", cmd);
+            log.warn("Shutdown while handling command " + cmd);
             return new ExceptionResponse(new CacheException("Cache is shutting down"));
          } catch (Throwable x) {
             if (cmd == null)
-               log.warnf(x, "Problems unmarshalling remote command from byte buffer");
+               log.warn("Problems unmarshalling remote command from byte buffer", x);
             else
-               log.warnf(x, "Problems invoking command %s", cmd);
+               log.warn("Problems invoking command " + cmd, x);
             return new ExceptionResponse(new CacheException("Problems invoking command.", x));
          }
       } else {
@@ -240,10 +243,10 @@ public class CommandAwareRpcDispatcher extends RpcDispatcher {
 
    private Object executeCommandFromLocalCluster(ReplicableCommand cmd, Message req) throws Throwable {
       if (cmd instanceof CacheRpcCommand) {
-         if (trace) log.tracef("Attempting to execute command: %s [sender=%s]", cmd, req.getSrc());
+         if (trace) log.trace("Attempting to execute command: " + cmd + " [sender=" + req.getSrc() + "]");
          return inboundInvocationHandler.handle((CacheRpcCommand) cmd, fromJGroupsAddress(req.getSrc()));
       } else {
-         if (trace) log.tracef("Attempting to execute non-CacheRpcCommand command: %s [sender=%s]", cmd, req.getSrc());
+         if (trace) log.trace("Attempting to execute non-CacheRpcCommand command: " + cmd + " [sender=" + req.getSrc() + "]");
          gcr.wireDependencies(cmd);
 
          //todo [anistor] the call to perform() should be wrapped in try/catch and any exception should be wrapped in an ExceptionResponse, as it happens for commands that go through InboundInvocationHandler
@@ -284,7 +287,8 @@ public class CommandAwareRpcDispatcher extends RpcDispatcher {
                                              Address destination, ResponseMode mode,
                                              Marshaller marshaller, CommandAwareRpcDispatcher card, boolean oob,
                                              JGroupsTransport transport) throws Exception {
-      if (trace) log.tracef("Replication task sending %s to single recipient %s with response mode %s", command, destination, mode);
+      if (trace) log.trace("Replication task sending " + command 
+    		  + " to single recipient " + destination + " with response mode " + mode);
 
       // Replay capability requires responses from all members!
       /// HACK ALERT!  Used for ISPN-1789.  Enable RSVP if the command is a state transfer control command or cache topology control command.
@@ -298,13 +302,13 @@ public class CommandAwareRpcDispatcher extends RpcDispatcher {
                                 new RequestOptions(mode, timeout));
 
       // we only bother parsing responses if we are not in ASYNC mode.
-      if (trace) log.tracef("Response: %s", retval);
+      if (trace) log.trace("Response: " + retval);
       if (mode == ResponseMode.GET_NONE)
          return null;
 
       if (retval != null) {
          if (!transport.checkResponse(retval, fromJGroupsAddress(destination))) {
-            if (trace) log.tracef("Invalid response from %s", destination);
+            if (trace) log.trace("Invalid response from " + destination);
             throw new TimeoutException("Received an invalid response " + retval + " from " + destination);
          }
       }
@@ -315,7 +319,8 @@ public class CommandAwareRpcDispatcher extends RpcDispatcher {
    private static RspList<Object> processCalls(ReplicableCommand command, boolean broadcast, long timeout,
                                                RspFilter filter, List<Address> dests, ResponseMode mode,
                                                Marshaller marshaller, CommandAwareRpcDispatcher card, boolean oob, boolean anycasting) throws Exception {
-      if (trace) log.tracef("Replication task sending %s to addresses %s with response mode %s", command, dests, mode);
+      if (trace) log.trace("Replication task sending " + command 
+    		  + " to addresses " + dests + " with response mode " + mode);
 
       /// HACK ALERT!  Used for ISPN-1789.  Enable RSVP if the command is a cache topology control command.
       boolean rsvp = command instanceof CacheTopologyControlCommand;
@@ -370,7 +375,7 @@ public class CommandAwareRpcDispatcher extends RpcDispatcher {
       // we only bother parsing responses if we are not in ASYNC mode.
       if (mode != ResponseMode.GET_NONE) {
 
-         if (trace) log.tracef("Responses: %s", retval);
+         if (trace) log.trace("Responses: " + retval);
 
          // a null response is 99% likely to be due to a marshalling problem - we throw a NSE, this needs to be changed when
          // JGroups supports http://jira.jboss.com/jira/browse/JGRP-193
@@ -450,7 +455,7 @@ public class CommandAwareRpcDispatcher extends RpcDispatcher {
          if (sc.processed) {
             // This can happen - it is a race condition in JGroups' NotifyingFuture.setListener() where a listener
             // could be notified twice.
-            if (trace) log.tracef("Not processing callback; already processed callback for sender %s", sc.address);
+            if (trace) log.trace("Not processing callback; already processed callback for sender " + sc.address);
          } else {
             sc.processed = true;
             Address sender = sc.address;
@@ -458,7 +463,7 @@ public class CommandAwareRpcDispatcher extends RpcDispatcher {
             try {
                if (retval == null) {
                   Object response = objectFuture.get();
-                  if (trace) log.tracef("Received response: %s from %s", response, sender);
+                  if (trace) log.trace("Received response: " + response + " from " + sender);
                   filter.isAcceptable(response, sender);
                   if (!filter.needMoreResponses()) {
                      retval = new RspList(Collections.singleton(new Rsp(sender, response)));
@@ -466,7 +471,8 @@ public class CommandAwareRpcDispatcher extends RpcDispatcher {
                      //TODO cancel other tasks?
                   }
                } else {
-                  if (trace) log.tracef("Skipping response from %s since a valid response for this request has already been received", sender);
+                  if (trace) log.trace("Skipping response from " + sender + " since a valid " +
+                  		"response for this request has already been received");
                }
             } catch (InterruptedException e) {
                Thread.currentThread().interrupt();
@@ -480,7 +486,8 @@ public class CommandAwareRpcDispatcher extends RpcDispatcher {
                   exception = new CacheException("Caught a throwable", e.getCause());
 
                if (log.isDebugEnabled())
-                  log.debugf("Caught exception %s from sender %s.  Will skip this response.", exception.getClass().getName(), sender);
+                  log.debug("Caught exception " + exception.getClass().getName() + " from sender " + sender + ".  " +
+                  		"Will skip this response.");
                log.trace("Exception caught: ", exception);
             } finally {
                expectedResponses--;

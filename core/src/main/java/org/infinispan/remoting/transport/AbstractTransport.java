@@ -22,6 +22,8 @@
  */
 package org.infinispan.remoting.transport;
 
+import java.util.Map;
+
 import org.infinispan.CacheException;
 import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.factories.annotations.Inject;
@@ -31,9 +33,7 @@ import org.infinispan.remoting.responses.ExceptionResponse;
 import org.infinispan.remoting.responses.Response;
 import org.infinispan.remoting.transport.jgroups.SuspectException;
 import org.infinispan.util.concurrent.TimeoutException;
-import org.infinispan.util.logging.Log;
-
-import java.util.Map;
+import org.infinispan.util.logging.ALogger;
 
 /**
  * Common transport-related behaviour
@@ -59,7 +59,7 @@ public abstract class AbstractTransport implements Transport {
    }
 
    public final boolean checkResponse(Object responseObject, Address sender) throws Exception {
-      Log log = getLog();
+      ALogger log = getLog();
       if (responseObject instanceof Response) {
          Response response = (Response) responseObject;
          if (response instanceof ExceptionResponse) {
@@ -77,7 +77,7 @@ public abstract class AbstractTransport implements Transport {
       } else if (responseObject != null) {
          // null responses should just be ignored, all other responses should trigger an exception
          Class<?> responseClass = responseObject.getClass();
-         log.tracef("Unexpected response object type from %s: %s", sender, responseClass);
+         log.trace("Unexpected response object type from " + sender + ": " + responseClass);
          throw new CacheException(String.format("Unexpected response object type from %s: %s", sender, responseClass));
       }
       return false;
@@ -87,12 +87,12 @@ public abstract class AbstractTransport implements Transport {
                                                        boolean wasReceived, Address sender, boolean usedResponseFilter, boolean ignoreLeavers)
            throws Exception
    {
-      Log log = getLog();
+      ALogger log = getLog();
       boolean invalidResponse = true;
       if (!wasSuspected && wasReceived) {
          invalidResponse = false;
          if (exception != null) {
-            log.tracef(exception, "Unexpected exception from %s", sender);
+            log.trace("Unexpected exception from " + sender, exception);
             throw new CacheException("Remote (" + sender + ") failed unexpectedly", exception);
          }
          
@@ -101,7 +101,7 @@ public abstract class AbstractTransport implements Transport {
          if (!ignoreLeavers) {
             throw new SuspectException("Suspected member: " + sender, sender);
          } else {
-            log.tracef("Target node %s left during remote call, ignoring", sender);
+            log.trace("Target node " + sender + " left during remote call, ignoring");
          }
       } else {
          // if we have a response filter then we may not have waited for some nodes!

@@ -28,11 +28,10 @@ import org.infinispan.context.InvocationContext;
 import org.infinispan.context.InvocationContextContainer;
 import org.infinispan.factories.annotations.Inject;
 import org.infinispan.interceptors.base.CommandInterceptor;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
+import org.transaction.Transaction;
+import org.transaction.TransactionManager;
 
 /**
  * Interceptor that captures batched calls and attaches contexts.
@@ -45,10 +44,10 @@ public class BatchingInterceptor extends CommandInterceptor {
    TransactionManager transactionManager;
    InvocationContextContainer icc;
 
-   private static final Log log = LogFactory.getLog(BatchingInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(BatchingInterceptor.class);
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 

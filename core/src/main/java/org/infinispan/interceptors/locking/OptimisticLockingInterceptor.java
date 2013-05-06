@@ -23,6 +23,11 @@
 
 package org.infinispan.interceptors.locking;
 
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.infinispan.InvalidCacheUsageException;
 import org.infinispan.commands.AbstractVisitor;
 import org.infinispan.commands.FlagAffectedCommand;
@@ -50,13 +55,8 @@ import org.infinispan.factories.annotations.Inject;
 import org.infinispan.factories.annotations.Start;
 import org.infinispan.util.TimSort;
 import org.infinispan.util.concurrent.IsolationLevel;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Locking interceptor to be used by optimistic transactional caches.
@@ -80,10 +80,10 @@ public class OptimisticLockingInterceptor extends AbstractTxLockingInterceptor {
 
    EntryFactory entryFactory;
 
-   private static final Log log = LogFactory.getLog(OptimisticLockingInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(OptimisticLockingInterceptor.class);
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 
@@ -129,7 +129,7 @@ public class OptimisticLockingInterceptor extends AbstractTxLockingInterceptor {
             log.trace("Not using lock reordering as the prepare contains a clear command.");
             acquireLocksVisitingCommands(ctx, command);
          } else {
-            log.tracef("Using lock reordering, order is: %s", orderedKeys);
+            log.trace("Using lock reordering, order is: " + orderedKeys);
             acquireAllLocks(ctx, orderedKeys);
          }
       }

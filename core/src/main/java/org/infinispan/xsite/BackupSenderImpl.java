@@ -19,6 +19,11 @@
 
 package org.infinispan.xsite;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.infinispan.Cache;
 import org.infinispan.commands.AbstractVisitor;
 import org.infinispan.commands.ReplicableCommand;
@@ -47,14 +52,9 @@ import org.infinispan.remoting.transport.Transport;
 import org.infinispan.transaction.LocalTransaction;
 import org.infinispan.transaction.TransactionTable;
 import org.infinispan.util.Util;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.Transaction;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.transaction.Transaction;
 
 /**
  * @author Mircea Markus
@@ -62,7 +62,7 @@ import java.util.Map;
  */
 public class BackupSenderImpl implements BackupSender {
 
-   private static Log log = LogFactory.getLog(BackupSenderImpl.class);
+   private static ALogger log = LogFactory.getLog(BackupSenderImpl.class);
 
    private Cache cache;
    private Transport transport;
@@ -133,7 +133,7 @@ public class BackupSenderImpl implements BackupSender {
            command.acceptVisitor(null, new CustomBackupPolicyInvoker(failure.getKey(), customFailurePolicy, transaction));
          }
          if (policy == BackupFailurePolicy.WARN) {
-            log.warnXsiteBackupFailed(cacheName, failure.getKey(), failure.getValue());
+            log.warn("Problems backing up data for cache " + cacheName + " to site " + failure.getKey() + ": " + failure.getValue());
          } else if (policy == BackupFailurePolicy.FAIL) {
             throw new BackupFailureException(failure.getValue(),failure.getKey(), cacheName);
          }
@@ -177,7 +177,7 @@ public class BackupSenderImpl implements BackupSender {
       SitesConfiguration sites = config.sites();
       for (BackupConfiguration bc : sites.backups()) {
          if (bc.site().equals(localSiteName)) {
-            log.cacheBackupsDataToSameSite(localSiteName);
+            log.warn("This cache is configured to backup to its own site (" + localSiteName + ").");
             continue;
          }
          boolean isSync = bc.strategy() == BackupConfiguration.BackupStrategy.SYNC;

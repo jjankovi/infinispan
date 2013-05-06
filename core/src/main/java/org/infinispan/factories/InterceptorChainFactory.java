@@ -23,6 +23,8 @@
 package org.infinispan.factories;
 
 
+import java.util.List;
+
 import org.infinispan.CacheException;
 import org.infinispan.config.ConfigurationException;
 import org.infinispan.configuration.cache.Configuration;
@@ -31,7 +33,30 @@ import org.infinispan.configuration.cache.InterceptorConfiguration;
 import org.infinispan.configuration.cache.LoaderConfiguration;
 import org.infinispan.configuration.cache.StoreConfiguration;
 import org.infinispan.factories.annotations.DefaultFactoryFor;
-import org.infinispan.interceptors.*;
+import org.infinispan.interceptors.ActivationInterceptor;
+import org.infinispan.interceptors.BatchingInterceptor;
+import org.infinispan.interceptors.CacheLoaderInterceptor;
+import org.infinispan.interceptors.CacheMgmtInterceptor;
+import org.infinispan.interceptors.CacheStoreInterceptor;
+import org.infinispan.interceptors.CallInterceptor;
+import org.infinispan.interceptors.ClusteredActivationInterceptor;
+import org.infinispan.interceptors.ClusteredCacheLoaderInterceptor;
+import org.infinispan.interceptors.DeadlockDetectingInterceptor;
+import org.infinispan.interceptors.DistCacheStoreInterceptor;
+import org.infinispan.interceptors.DistributionInterceptor;
+import org.infinispan.interceptors.EntryWrappingInterceptor;
+import org.infinispan.interceptors.InterceptorChain;
+import org.infinispan.interceptors.InvalidationInterceptor;
+import org.infinispan.interceptors.InvocationContextInterceptor;
+import org.infinispan.interceptors.IsMarshallableInterceptor;
+import org.infinispan.interceptors.MarshalledValueInterceptor;
+import org.infinispan.interceptors.NotificationInterceptor;
+import org.infinispan.interceptors.PassivationInterceptor;
+import org.infinispan.interceptors.ReplicationInterceptor;
+import org.infinispan.interceptors.TxInterceptor;
+import org.infinispan.interceptors.VersionedDistributionInterceptor;
+import org.infinispan.interceptors.VersionedEntryWrappingInterceptor;
+import org.infinispan.interceptors.VersionedReplicationInterceptor;
 import org.infinispan.interceptors.base.CommandInterceptor;
 import org.infinispan.interceptors.locking.NonTransactionalLockingInterceptor;
 import org.infinispan.interceptors.locking.OptimisticLockingInterceptor;
@@ -43,10 +68,8 @@ import org.infinispan.statetransfer.StateTransferInterceptor;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 import org.infinispan.util.concurrent.IsolationLevel;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.List;
 
 /**
  * Factory class that builds an interceptor chain based on cache configuration.
@@ -58,7 +81,7 @@ import java.util.List;
 @DefaultFactoryFor(classes = InterceptorChain.class)
 public class InterceptorChainFactory extends AbstractNamedCacheComponentFactory implements AutoInstantiableFactory {
 
-   private static final Log log = LogFactory.getLog(InterceptorChainFactory.class);
+   private static final ALogger log = LogFactory.getLog(InterceptorChainFactory.class);
 
    private CommandInterceptor createInterceptor(CommandInterceptor interceptor, Class<? extends CommandInterceptor> interceptorType) {
       CommandInterceptor chainedInterceptor = componentRegistry.getComponent(interceptorType);

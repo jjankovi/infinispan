@@ -22,6 +22,17 @@
  */
 package org.infinispan.interceptors;
 
+import static org.infinispan.context.Flag.SKIP_CACHE_STORE;
+import static org.infinispan.context.Flag.SKIP_SHARED_CACHE_STORE;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.infinispan.commands.AbstractVisitor;
 import org.infinispan.commands.FlagAffectedCommand;
 import org.infinispan.commands.tx.CommitCommand;
@@ -54,24 +65,13 @@ import org.infinispan.loaders.modifications.Remove;
 import org.infinispan.loaders.modifications.Store;
 import org.infinispan.transaction.xa.GlobalTransaction;
 import org.infinispan.util.concurrent.ConcurrentMapFactory;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 import org.rhq.helpers.pluginAnnotations.agent.MeasurementType;
 import org.rhq.helpers.pluginAnnotations.agent.Metric;
 import org.rhq.helpers.pluginAnnotations.agent.Operation;
-
-import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static org.infinispan.context.Flag.SKIP_CACHE_STORE;
-import static org.infinispan.context.Flag.SKIP_SHARED_CACHE_STORE;
+import org.transaction.Transaction;
+import org.transaction.TransactionManager;
 
 /**
  * Writes modifications back to the store on the way out: stores modifications back through the CacheLoader, either
@@ -92,10 +92,10 @@ public class CacheStoreInterceptor extends JmxStatsCommandInterceptor {
    private TransactionManager transactionManager;
    protected volatile boolean enabled = true;
 
-   private static final Log log = LogFactory.getLog(CacheStoreInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(CacheStoreInterceptor.class);
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 
@@ -154,7 +154,7 @@ public class CacheStoreInterceptor extends JmxStatsCommandInterceptor {
       if (ctx.hasModifications()) {
          // this is a commit call.
          GlobalTransaction tx = ctx.getGlobalTransaction();
-         if (getLog().isTraceEnabled()) getLog().tracef("Calling loader.commit() for transaction %s", tx);
+         if (getLog().isTraceEnabled()) getLog().trace("Calling loader.commit() for transaction " + tx);
 
          //hack for ISPN-586. This should be dropped once a proper fix for ISPN-604 is in place
          Transaction xaTx = null;
@@ -219,7 +219,8 @@ public class CacheStoreInterceptor extends JmxStatsCommandInterceptor {
       if (!skip(ctx, command) && !ctx.isInTxScope() && command.isSuccessful()) {
          Object key = command.getKey();
          boolean resp = store.remove(key);
-         if (getLog().isTraceEnabled()) getLog().tracef("Removed entry under key %s and got response %s from CacheStore", key, resp);
+         if (getLog().isTraceEnabled()) getLog().trace("Removed entry under key " + key + " and got " +
+         		"response " + resp + " from CacheStore");
       }
       return retval;
    }
@@ -245,7 +246,7 @@ public class CacheStoreInterceptor extends JmxStatsCommandInterceptor {
       Object key = command.getKey();
       InternalCacheEntry se = getStoredEntry(key, ctx);
       store.store(se);
-      if (getLog().isTraceEnabled()) getLog().tracef("Stored entry %s under key %s", se, key);
+      if (getLog().isTraceEnabled()) getLog().trace("Stored entry " + se + " under key " + key);
       if (getStatisticsEnabled()) cacheStores.incrementAndGet();
 
       return returnValue;
@@ -259,7 +260,7 @@ public class CacheStoreInterceptor extends JmxStatsCommandInterceptor {
       Object key = command.getKey();
       InternalCacheEntry se = getStoredEntry(key, ctx);
       store.store(se);
-      if (getLog().isTraceEnabled()) getLog().tracef("Stored entry %s under key %s", se, key);
+      if (getLog().isTraceEnabled()) getLog().trace("Stored entry " + se + " under key " + key);
       if (getStatisticsEnabled()) cacheStores.incrementAndGet();
 
       return returnValue;
@@ -274,7 +275,7 @@ public class CacheStoreInterceptor extends JmxStatsCommandInterceptor {
       for (Object key : map.keySet()) {
          InternalCacheEntry se = getStoredEntry(key, ctx);
          store.store(se);
-         if (getLog().isTraceEnabled()) getLog().tracef("Stored entry %s under key %s", se, key);
+         if (getLog().isTraceEnabled()) getLog().trace("Stored entry " + se + " under key " + key);
       }
       if (getStatisticsEnabled()) cacheStores.getAndAdd(map.size());
       return returnValue;
@@ -290,11 +291,11 @@ public class CacheStoreInterceptor extends JmxStatsCommandInterceptor {
          if (getLog().isTraceEnabled()) getLog().trace("Transaction has not logged any modifications!");
          return;
       }
-      if (getLog().isTraceEnabled()) getLog().tracef("Cache loader modification list: %s", modifications);
+      if (getLog().isTraceEnabled()) getLog().trace("Cache loader modification list: " + modifications);
       StoreModificationsBuilder modsBuilder = new StoreModificationsBuilder(getStatisticsEnabled(), modifications.size());
       for (WriteCommand cacheCommand : modifications) cacheCommand.acceptVisitor(ctx, modsBuilder);
       int numMods = modsBuilder.modifications.size();
-      if (getLog().isTraceEnabled()) getLog().tracef("Converted method calls to cache loader modifications.  List size: %s", numMods);
+      if (getLog().isTraceEnabled()) getLog().trace("Converted method calls to cache loader modifications.  List size: " + numMods);
 
       if (numMods > 0) {
          GlobalTransaction tx = transactionContext.getGlobalTransaction();

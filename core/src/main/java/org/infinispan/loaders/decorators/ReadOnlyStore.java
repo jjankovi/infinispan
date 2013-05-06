@@ -22,15 +22,15 @@
  */
 package org.infinispan.loaders.decorators;
 
+import java.io.ObjectInput;
+import java.util.List;
+
 import org.infinispan.container.entries.InternalCacheEntry;
 import org.infinispan.loaders.CacheStore;
 import org.infinispan.loaders.modifications.Modification;
 import org.infinispan.transaction.xa.GlobalTransaction;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.io.ObjectInput;
-import java.util.List;
 
 /**
  * A decorator that makes the underlying store a {@link org.infinispan.loaders.CacheLoader}, i.e., suppressing all write
@@ -40,7 +40,7 @@ import java.util.List;
  * @since 4.0
  */
 public class ReadOnlyStore extends AbstractDelegatingStore {
-   private static final Log log = LogFactory.getLog(ReadOnlyStore.class);
+   private static final ALogger log = LogFactory.getLog(ReadOnlyStore.class);
 
    public ReadOnlyStore(CacheStore delegate) {
       super(delegate);

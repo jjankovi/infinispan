@@ -19,18 +19,18 @@
 
 package org.infinispan.interceptors;
 
+import static org.infinispan.transaction.WriteSkewHelper.readVersionsFromResponse;
+import static org.infinispan.transaction.WriteSkewHelper.setVersionsSeenOnPrepareCommand;
+
+import java.util.Map;
+
 import org.infinispan.commands.tx.PrepareCommand;
 import org.infinispan.commands.tx.VersionedPrepareCommand;
 import org.infinispan.context.impl.TxInvocationContext;
 import org.infinispan.remoting.responses.Response;
 import org.infinispan.remoting.transport.Address;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.Map;
-
-import static org.infinispan.transaction.WriteSkewHelper.readVersionsFromResponse;
-import static org.infinispan.transaction.WriteSkewHelper.setVersionsSeenOnPrepareCommand;
 
 /**
  * A form of the {@link ReplicationInterceptor} that adds additional logic to how prepares are handled.
@@ -40,10 +40,10 @@ import static org.infinispan.transaction.WriteSkewHelper.setVersionsSeenOnPrepar
  */
 public class VersionedReplicationInterceptor extends ReplicationInterceptor {
 
-   private static final Log log = LogFactory.getLog(VersionedReplicationInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(VersionedReplicationInterceptor.class);
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 

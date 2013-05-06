@@ -22,21 +22,6 @@
  */
 package org.infinispan.affinity;
 
-import net.jcip.annotations.GuardedBy;
-import net.jcip.annotations.ThreadSafe;
-import org.infinispan.Cache;
-import org.infinispan.distribution.DistributionManager;
-import org.infinispan.distribution.ch.ConsistentHash;
-import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.notifications.cachelistener.event.TopologyChangedEvent;
-import org.infinispan.notifications.cachemanagerlistener.event.CacheStoppedEvent;
-import org.infinispan.remoting.transport.Address;
-import org.infinispan.util.concurrent.ConcurrentHashSet;
-import org.infinispan.util.concurrent.ConcurrentMapFactory;
-import org.infinispan.util.concurrent.ReclosableLatch;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -48,6 +33,22 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import net.jcip.annotations.GuardedBy;
+import net.jcip.annotations.ThreadSafe;
+
+import org.infinispan.Cache;
+import org.infinispan.distribution.DistributionManager;
+import org.infinispan.distribution.ch.ConsistentHash;
+import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.notifications.cachelistener.event.TopologyChangedEvent;
+import org.infinispan.notifications.cachemanagerlistener.event.CacheStoppedEvent;
+import org.infinispan.remoting.transport.Address;
+import org.infinispan.util.concurrent.ConcurrentHashSet;
+import org.infinispan.util.concurrent.ConcurrentMapFactory;
+import org.infinispan.util.concurrent.ReclosableLatch;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * Implementation of KeyAffinityService.
@@ -61,7 +62,7 @@ public class KeyAffinityServiceImpl<K> implements KeyAffinityService<K> {
    // TODO During state transfer, we should try to assign keys to a node only if they are owners in both CHs
    public final static float THRESHOLD = 0.5f;
    
-   private static final Log log = LogFactory.getLog(KeyAffinityServiceImpl.class);
+   private static final ALogger log = LogFactory.getLog(KeyAffinityServiceImpl.class);
 
    private final Set<Address> filter;
 
@@ -151,7 +152,7 @@ public class KeyAffinityServiceImpl<K> implements KeyAffinityService<K> {
             }
          }
          existingKeyCount.decrementAndGet();
-         log.tracef("Returning key %s for address %s", result, address);
+         log.trace("Returning key " + result + " for address " + address);
          return result;
       } finally {
          if (queue.size() < bufferSize * THRESHOLD + 1) {
@@ -204,7 +205,7 @@ public class KeyAffinityServiceImpl<K> implements KeyAffinityService<K> {
    }
 
    public void handleViewChange(TopologyChangedEvent<?, ?> vce) {    //todo [anistor] do we have to do this for both pre/after?
-      log.tracef("TopologyChangedEvent received: %s", vce);
+      log.trace("TopologyChangedEvent received: " + vce);
       maxNumberInvariant.writeLock().lock();
       try {
          address2key.clear(); //we need to drop everything as key-mapping data is stale due to view change
@@ -221,7 +222,7 @@ public class KeyAffinityServiceImpl<K> implements KeyAffinityService<K> {
    }
 
    public void handleCacheStopped(CacheStoppedEvent cse) {
-      log.tracef("Cache stopped, stopping the service: %s", cse);
+      log.trace("Cache stopped, stopping the service: " + cse);
       stop();
    }
 
@@ -249,7 +250,7 @@ public class KeyAffinityServiceImpl<K> implements KeyAffinityService<K> {
             Thread.currentThread().interrupt();
          }
          finally {
-            log.debugf("Shutting down KeyAffinity service for key set: %s", filter);
+            log.debug("Shutting down KeyAffinity service for key set: " + filter);
          }
       }
 
@@ -293,7 +294,7 @@ public class KeyAffinityServiceImpl<K> implements KeyAffinityService<K> {
          boolean added = queue.offer(key);
          if (added) {
             existingKeyCount.incrementAndGet();
-            log.tracef("Added key %s for address %s", key, address);
+            log.trace("Added key " + key + " for address " + address);
          }
          return added;
       }
@@ -315,8 +316,8 @@ public class KeyAffinityServiceImpl<K> implements KeyAffinityService<K> {
       maxNumberOfKeys.set(address2key.keySet().size() * bufferSize);
       existingKeyCount.set(0);
       if (log.isTraceEnabled()) {
-         log.tracef("resetNumberOfKeys ends with: maxNumberOfKeys=%s, existingKeyCount=%s",
-                    maxNumberOfKeys.get(), existingKeyCount.get());
+         log.trace("resetNumberOfKeys ends with: maxNumberOfKeys=" + maxNumberOfKeys.get() + ", " +
+         		"existingKeyCount=" + existingKeyCount.get());
       }
    }
 
@@ -328,7 +329,7 @@ public class KeyAffinityServiceImpl<K> implements KeyAffinityService<K> {
          if (interestedInAddress(address)) {
             address2key.put(address, new ArrayBlockingQueue<K>(bufferSize));
          } else {
-            log.tracef("Skipping address: %s", address);
+            log.trace("Skipping address: " + address);
          }
       }
    }

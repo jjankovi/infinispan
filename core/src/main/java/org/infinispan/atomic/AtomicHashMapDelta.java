@@ -22,20 +22,19 @@
  */
 package org.infinispan.atomic;
 
-import org.infinispan.marshall.AbstractExternalizer;
-import org.infinispan.marshall.Ids;
-import org.infinispan.util.Util;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+
+import org.infinispan.marshall.AbstractExternalizer;
+import org.infinispan.marshall.Ids;
+import org.infinispan.util.Util;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * Changes that have occurred on an AtomicHashMap
@@ -44,7 +43,7 @@ import java.util.Set;
  * @since 4.0
  */
 public class AtomicHashMapDelta implements Delta {
-   private static final Log log = LogFactory.getLog(AtomicHashMapDelta.class);
+   private static final ALogger log = LogFactory.getLog(AtomicHashMapDelta.class);
    private static final boolean trace = log.isTraceEnabled();
 
    private List<Operation<Object, Object>> changeLog;
@@ -106,7 +105,7 @@ public class AtomicHashMapDelta implements Delta {
    public static class Externalizer extends AbstractExternalizer<AtomicHashMapDelta> {
       @Override
       public void writeObject(ObjectOutput output, AtomicHashMapDelta delta) throws IOException {
-         if (trace) log.tracef("Serializing changeLog %s", delta.changeLog);
+         if (trace) log.trace("Serializing changeLog " + delta.changeLog);
          output.writeObject(delta.changeLog);
       }
 
@@ -114,7 +113,7 @@ public class AtomicHashMapDelta implements Delta {
       public AtomicHashMapDelta readObject(ObjectInput input) throws IOException, ClassNotFoundException {
          AtomicHashMapDelta delta = new AtomicHashMapDelta();
          delta.changeLog = (List<Operation<Object, Object>>) input.readObject();
-         if (trace) log.tracef("Deserialized changeLog %s", delta.changeLog);
+         if (trace) log.trace("Deserialized changeLog " + delta.changeLog);
          return delta;
       }
 

@@ -22,28 +22,6 @@
  */
 package org.infinispan.config.parsing;
 
-import org.infinispan.config.ConfigurationException;
-import org.infinispan.util.BeanUtils;
-import org.infinispan.util.TypedProperties;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-import org.infinispan.util.StringPropertyReplacer;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Text;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.Result;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
 import java.beans.PropertyEditor;
 import java.beans.PropertyEditorManager;
 import java.io.ByteArrayInputStream;
@@ -54,6 +32,29 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+
+import org.infinispan.config.ConfigurationException;
+import org.infinispan.util.BeanUtils;
+import org.infinispan.util.StringPropertyReplacer;
+import org.infinispan.util.TypedProperties;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+
 /**
  * A simple XML utility class for reading configuration elements
  *
@@ -61,7 +62,7 @@ import java.util.Properties;
  * @since 4.0
  */
 public class XmlConfigHelper {
-   private static final Log log = LogFactory.getLog(XmlConfigHelper.class);
+   private static final ALogger log = LogFactory.getLog(XmlConfigHelper.class);
 
    /**
     * Returns the contents of a specific node of given element name, provided a certain attribute exists and is set to
@@ -165,7 +166,7 @@ public class XmlConfigHelper {
          }
       }
 
-      if (log.isDebugEnabled()) log.debugf("getSubElement(): Does not exist for %s", subElementName);
+      if (log.isDebugEnabled()) log.debug("getSubElement(): Does not exist for " + subElementName);
       return null;
    }
 
@@ -285,7 +286,7 @@ public class XmlConfigHelper {
          is.close();
       }
       catch (IOException e) {
-         log.errorReadingProperties(e);
+         log.warn("Unexpected error reading properties", e);
          throw new ConfigurationException("Exception occured while reading properties from XML document", e);
       }
       return properties;
@@ -442,7 +443,7 @@ public class XmlConfigHelper {
             if (setter.equals(m.getName()) || fluentSetter.equals(m.getName())) {
                Class<?> paramTypes[] = m.getParameterTypes();
                if (paramTypes.length != 1) {
-                  log.tracef("Rejecting setter %s on class %s due to incorrect number of parameters", m, objectClass);
+                  log.trace("Rejecting setter " + m + " on class " + objectClass + " due to incorrect number of parameters");
                   continue; // try another param with the same name.
                }
 

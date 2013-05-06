@@ -31,7 +31,7 @@ import org.infinispan.remoting.responses.ExceptionResponse;
 import org.infinispan.remoting.responses.SuccessfulResponse;
 import org.infinispan.remoting.responses.UnsuccessfulResponse;
 import org.infinispan.remoting.transport.Address;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -63,7 +63,7 @@ public class CacheTopologyControlCommand implements ReplicableCommand {
       GET_STATUS
    }
 
-   private static final Log log = LogFactory.getLog(CacheTopologyControlCommand.class);
+   private static final ALogger log = LogFactory.getLog(CacheTopologyControlCommand.class);
 
    public static final byte COMMAND_ID = 17;
 
@@ -137,10 +137,10 @@ public class CacheTopologyControlCommand implements ReplicableCommand {
          Object responseValue = doPerform();
          return SuccessfulResponse.create(responseValue);
       } catch (InterruptedException e) {
-         log.tracef("Command execution %s was interrupted because the cache manager is shutting down", this);
+         log.trace("Command execution " + this + " was interrupted because the cache manager is shutting down");
          return UnsuccessfulResponse.INSTANCE;
       } catch (Exception t) {
-         log.exceptionHandlingCommand(this, t);
+         log.warn("Caught exception when handling command " + this, t);
          // todo [anistor] CommandAwareRequestDispatcher does not wrap our exceptions so we have to do it instead
          return new ExceptionResponse(t);
       } finally {

@@ -23,10 +23,10 @@
 package org.infinispan.container.entries;
 
 import org.infinispan.container.DataContainer;
-import org.infinispan.transaction.WriteSkewException;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
 import org.infinispan.container.versioning.EntryVersion;
+import org.infinispan.transaction.WriteSkewException;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * An extension of {@link ReadCommittedEntry} that provides Repeatable Read semantics
@@ -35,7 +35,7 @@ import org.infinispan.container.versioning.EntryVersion;
  * @since 4.0
  */
 public class RepeatableReadEntry extends ReadCommittedEntry {
-   private static final Log log = LogFactory.getLog(RepeatableReadEntry.class);
+   private static final ALogger log = LogFactory.getLog(RepeatableReadEntry.class);
 
    public RepeatableReadEntry(Object key, Object value, EntryVersion version, long lifespan) {
       super(key, value, version, lifespan);
@@ -64,14 +64,16 @@ public class RepeatableReadEntry extends ReadCommittedEntry {
       // Note that this identity-check is intentional.  We don't *want* to call actualValue.equals() since that defeats the purpose.
       // the implicit "versioning" we have in R_R creates a new wrapper "value" instance for every update.
       if (actualValue != null && actualValue != valueToCompare) {
-         log.unableToCopyEntryForUpdate(getKey());
+         log.warn("Detected write skew on key [" + getKey() + "]. Another process has changed the entry " +
+         		"since we last read it! Unable to copy entry for update.");
          throw new WriteSkewException("Detected write skew.");
       }
 
       if (ice == null && !isCreated()) {
          // We still have a write-skew here.  When this wrapper was created there was an entry in the data container
          // (hence isCreated() == false) but 'ice' is now null.
-         log.unableToCopyEntryForUpdate(getKey());
+    	  log.warn("Detected write skew on key [" + getKey() + "]. Another process has changed the entry since " +
+    	  		"we last read it! Unable to copy entry for update.");
          throw new WriteSkewException("Detected write skew - concurrent removal of entry!");
       }
    }

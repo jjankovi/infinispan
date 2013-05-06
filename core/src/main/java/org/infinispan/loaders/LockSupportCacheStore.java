@@ -30,7 +30,7 @@ import org.infinispan.Cache;
 import org.infinispan.container.entries.InternalCacheEntry;
 import org.infinispan.marshall.StreamingMarshaller;
 import org.infinispan.util.concurrent.locks.StripedLock;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -53,7 +53,7 @@ import org.infinispan.util.logging.LogFactory;
  */
 public abstract class LockSupportCacheStore<L> extends AbstractCacheStore {
 
-   private static final Log log = LogFactory.getLog(LockSupportCacheStore.class);
+   private static final ALogger log = LogFactory.getLog(LockSupportCacheStore.class);
    private static final boolean trace = log.isTraceEnabled();
 
    private StripedLock locks;
@@ -72,7 +72,7 @@ public abstract class LockSupportCacheStore<L> extends AbstractCacheStore {
       if (config == null) {
         throw new CacheLoaderException("Null config. Possible reason is not calling super.init(...)");
       }
-      log.tracef("Starting cache with config: %s", config);
+      log.trace("Starting cache with config: " + config);
 
       locks = new StripedLock(config.getLockConcurrencyLevel());
       globalLockTimeoutMillis = config.getLockAcquistionTimeout();
@@ -182,7 +182,7 @@ public abstract class LockSupportCacheStore<L> extends AbstractCacheStore {
    @Override
    public final void store(InternalCacheEntry ed) throws CacheLoaderException {
       if (trace) {
-         log.tracef("store(%s)", ed);
+         log.trace("store(" + ed + ")");
       }
       if (ed == null) {
         return;
@@ -190,12 +190,12 @@ public abstract class LockSupportCacheStore<L> extends AbstractCacheStore {
       if (ed.canExpire() && ed.isExpired(System.currentTimeMillis())) {
          if (containsKey(ed.getKey())) {
             if (trace) {
-               log.tracef("Entry %s is expired!  Removing!", ed);
+               log.trace("Entry " + ed + " is expired!  Removing!");
             }
             remove(ed.getKey());
          } else {
             if (trace) {
-               log.tracef("Entry %s is expired!  Not doing anything.", ed);
+               log.trace("Entry " + ed + " is expired!  Not doing anything.");
             }
          }
          return;
@@ -209,14 +209,14 @@ public abstract class LockSupportCacheStore<L> extends AbstractCacheStore {
          unlock(keyHashCode);
       }
       if (trace) {
-         log.tracef("exit store(%s)", ed);
+         log.trace("exit store(" + ed + ")");
       }
    }
 
    @Override
    public final boolean remove(Object key) throws CacheLoaderException {
       if (trace) {
-         log.tracef("remove(%s)", key);
+         log.trace("remove(" + key + ")");
       }
       L keyHashCode = getLockFromKey(key);
       try {
@@ -225,7 +225,7 @@ public abstract class LockSupportCacheStore<L> extends AbstractCacheStore {
       } finally {
          unlock(keyHashCode);
          if (trace) {
-            log.tracef("Exit remove(%s)", key);
+            log.trace("Exit remove(" + key + ")");
          }
       }
    }

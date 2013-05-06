@@ -22,6 +22,12 @@
  */
 package org.infinispan.notifications.cachemanagerlistener;
 
+import java.lang.annotation.Annotation;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import org.infinispan.factories.annotations.Inject;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.notifications.AbstractListenerImpl;
@@ -36,14 +42,8 @@ import org.infinispan.notifications.cachemanagerlistener.event.EventImpl;
 import org.infinispan.notifications.cachemanagerlistener.event.MergeEvent;
 import org.infinispan.notifications.cachemanagerlistener.event.ViewChangedEvent;
 import org.infinispan.remoting.transport.Address;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.lang.annotation.Annotation;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Global, shared notifications on the cache manager.
@@ -53,7 +53,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class CacheManagerNotifierImpl extends AbstractListenerImpl implements CacheManagerNotifier {
 
-   private static final Log log = LogFactory.getLog(CacheManagerNotifierImpl.class);
+   private static final ALogger log = LogFactory.getLog(CacheManagerNotifierImpl.class);
 
    private static final Map<Class<? extends Annotation>, Class<?>> allowedListeners = new HashMap<Class<? extends Annotation>, Class<?>>(4);
 
@@ -137,7 +137,7 @@ public class CacheManagerNotifierImpl extends AbstractListenerImpl implements Ca
    }
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 

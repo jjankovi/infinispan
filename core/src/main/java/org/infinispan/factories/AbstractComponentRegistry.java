@@ -22,6 +22,20 @@
  */
 package org.infinispan.factories;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.Stack;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+
 import org.infinispan.CacheException;
 import org.infinispan.config.Configuration;
 import org.infinispan.config.ConfigurationException;
@@ -36,21 +50,7 @@ import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.lifecycle.Lifecycle;
 import org.infinispan.util.ReflectionUtil;
 import org.infinispan.util.Util;
-import org.infinispan.util.logging.Log;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.Stack;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
+import org.infinispan.util.logging.ALogger;
 
 /**
  * A registry where components which have been created are stored.  Components are stored as singletons, registered
@@ -117,7 +117,7 @@ public abstract class AbstractComponentRegistry implements Lifecycle, Cloneable 
       return state;
    }
 
-   protected abstract Log getLog();
+   protected abstract ALogger getLog();
 
    public abstract ComponentMetadataRepo getComponentMetadataRepo();
 
@@ -191,14 +191,15 @@ public abstract class AbstractComponentRegistry implements Lifecycle, Cloneable 
       if (old != null) {
          // if they are equal don't bother
          if (old.instance.equals(component)) {
-            getLog().tracef("Attempting to register a component equal to one that already exists under the same name (%s).  Not doing anything.", name);
+            getLog().trace("Attempting to register a component equal to one that " +
+            		"already exists under the same name (" + name + ").  Not doing anything.");
             return;
          }
       }
 
       Component c;
       if (old != null) {
-         getLog().tracef("Replacing old component %s with new instance %s", old, component);
+         getLog().trace("Replacing old component " + old + " with new instance " +  component);
          old.instance = component;
          old.methodsScanned = false;
          c = old;
@@ -219,7 +220,7 @@ public abstract class AbstractComponentRegistry implements Lifecycle, Cloneable 
       // we inject dependencies only after the component is already in the map to support cyclical dependencies
       c.injectDependencies();
 
-      if (old == null) getLog().tracef("Registering component %s under name %s", c, name);
+      if (old == null) getLog().trace("Registering component " + c + " under name " + name);
       if (state == ComponentStatus.RUNNING) {
          populateLifeCycleMethods(c);
          try {
@@ -239,7 +240,8 @@ public abstract class AbstractComponentRegistry implements Lifecycle, Cloneable 
       if (dependencies.length > 0) {
          Object[] params = new Object[dependencies.length];
          if (getLog().isTraceEnabled())
-            getLog().tracef("Injecting dependencies for method [%s] on an instance of [%s].", injectMetadata.getMethod(), o.getClass().getName());
+            getLog().trace("Injecting dependencies for method [" + injectMetadata.getMethod() 
+            		+ "] on an instance of [" + o.getClass().getName() + "].");
          for (int i = 0; i < dependencies.length; i++) {
             String name = injectMetadata.getParameterName(i);
             boolean nameIsFQCN = !injectMetadata.isParameterNameSet(i);
@@ -290,7 +292,7 @@ public abstract class AbstractComponentRegistry implements Lifecycle, Cloneable 
          if (component != null) {
             registerComponent(component, name, nameIsFQCN);
          } else {
-            getLog().tracef("Registering a null for component %s", name);
+            getLog().trace("Registering a null for component " + name);
             registerNullComponent(name);
          }
       }
@@ -504,17 +506,17 @@ public abstract class AbstractComponentRegistry implements Lifecycle, Cloneable 
     */
    public synchronized void resetVolatileComponents() {
       // destroy all components to clean up resources
-      getLog().tracef("Resetting volatile components");
+      getLog().trace("Resetting volatile components");
       for (Component c : new HashSet<Component>(componentLookup.values())) {
          // the component is volatile!!
          if (!c.metadata.isSurvivesRestarts()) {
-            getLog().tracef("Removing volatile component %s", c.metadata.getName());
+            getLog().trace("Removing volatile component " + c.metadata.getName());
             componentLookup.remove(c.name);
          }
       }
 
       if (getLog().isTraceEnabled())
-         getLog().tracef("Reset volatile components. Registry now contains %s", componentLookup.keySet());
+         getLog().trace("Reset volatile components. Registry now contains " + componentLookup.keySet());
    }
 
    // ------------------------------ START: Publicly available lifecycle methods -----------------------------
@@ -553,7 +555,7 @@ public abstract class AbstractComponentRegistry implements Lifecycle, Cloneable 
    @Override
    public synchronized void stop() {
       if (!state.stopAllowed()) {
-         getLog().debugf("Ignoring call to stop() as current state is %s", this);
+         getLog().debug("Ignoring call to stop() as current state is " + this);
          return;
       }
 
@@ -564,7 +566,7 @@ public abstract class AbstractComponentRegistry implements Lifecycle, Cloneable 
          internalStop();
       } catch (Throwable t) {
          if (failed) {
-            getLog().failedToCallStopAfterFailure(t);
+            getLog().warn("Attempted to stop() from FAILED state, but caught exception; try calling destroy()", t);
          }
          failed = true;
          handleLifecycleTransitionFailure(t);
@@ -585,7 +587,7 @@ public abstract class AbstractComponentRegistry implements Lifecycle, Cloneable 
          if (state.stopAllowed())
             stop();
       } catch (CacheException e) {
-         getLog().stopBeforeDestroyFailed(e);
+         getLog().warn("Needed to call stop() before destroying but stop() threw exception. Proceeding to destroy", e);
       }
 
       try {
@@ -646,7 +648,8 @@ public abstract class AbstractComponentRegistry implements Lifecycle, Cloneable 
       boolean traceEnabled = getLog().isTraceEnabled();
       for (PrioritizedMethod em : startMethods) {
          if (traceEnabled)
-            getLog().tracef("Invoking start method %s on component %s", em.metadata.getMethod(), em.component.getName());
+            getLog().trace("Invoking start method " + em.metadata.getMethod() 
+            		+ " on component " + em.component.getName());
          em.invoke();
       }
    }
@@ -681,11 +684,11 @@ public abstract class AbstractComponentRegistry implements Lifecycle, Cloneable 
       boolean traceEnabled = getLog().isTraceEnabled();
       for (PrioritizedMethod em : stopMethods) {
          if (traceEnabled)
-            getLog().tracef("Invoking stop method %s on component %s", em.metadata.getMethod(), em.component.getName());
+            getLog().trace("Invoking stop method " + em.metadata.getMethod() + " on component " + em.component.getName());
          try {
             em.invoke();
          } catch (Throwable t) {
-            getLog().componentFailedToStop(t);
+            getLog().warn("While stopping a cache or cache manager, one of its components failed to stop", t);
          }
       }
 
@@ -723,7 +726,7 @@ public abstract class AbstractComponentRegistry implements Lifecycle, Cloneable 
             Thread.currentThread().interrupt();
          }
       } else {
-         getLog().cacheNotStarted();
+         getLog().warn("Received a remote call but the cache is not in STARTED state - ignoring call.");
       }
       return false;
    }

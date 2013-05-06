@@ -22,12 +22,6 @@
  */
 package org.infinispan.util;
 
-import org.infinispan.CacheConfigurationException;
-import org.infinispan.CacheException;
-import org.infinispan.commons.hash.Hash;
-import org.infinispan.marshall.Marshaller;
-
-import javax.naming.Context;
 import java.io.Closeable;
 import java.io.ObjectOutput;
 import java.io.OutputStream;
@@ -48,6 +42,12 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import org.infinispan.CacheConfigurationException;
+import org.infinispan.CacheException;
+import org.infinispan.commons.hash.Hash;
+import org.infinispan.marshall.Marshaller;
+import org.naming.Context;
 
 /**
  * General utility methods used throughout the Infinispan code base.

@@ -23,7 +23,19 @@
 
 package org.infinispan.transaction;
 
+import static java.util.Collections.emptySet;
+import static org.infinispan.util.Util.currentMillisFromNanotime;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import net.jcip.annotations.GuardedBy;
+
 import org.infinispan.Cache;
 import org.infinispan.CacheException;
 import org.infinispan.commands.CommandsFactory;
@@ -51,19 +63,10 @@ import org.infinispan.transaction.xa.GlobalTransaction;
 import org.infinispan.transaction.xa.TransactionFactory;
 import org.infinispan.util.Util;
 import org.infinispan.util.concurrent.ConcurrentMapFactory;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.Transaction;
-import javax.transaction.TransactionSynchronizationRegistry;
-import java.util.*;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
-import static java.util.Collections.emptySet;
-import static org.infinispan.util.Util.currentMillisFromNanotime;
+import org.transaction.Transaction;
+import org.transaction.TransactionSynchronizationRegistry;
 
 /**
  * Repository for {@link RemoteTransaction} and {@link org.infinispan.transaction.xa.TransactionXaAdapter}s (locally
@@ -77,7 +80,7 @@ import static org.infinispan.util.Util.currentMillisFromNanotime;
 public class TransactionTable {
 
    public static final int CACHE_STOPPED_VIEW_ID = -1;
-   private static final Log log = LogFactory.getLog(TransactionTable.class);
+   private static final ALogger log = LogFactory.getLog(TransactionTable.class);
 
    private ConcurrentMap<Transaction, LocalTransaction> localTransactions;
    private ConcurrentMap<GlobalTransaction, RemoteTransaction> remoteTransactions;
@@ -176,7 +179,7 @@ public class TransactionTable {
             try {
                transactionSynchronizationRegistry.registerInterposedSynchronization(sync);
             } catch (Exception e) {
-               log.failedSynchronizationRegistration(e);
+               log.warn("Failed synchronization registration", e);
                throw new CacheException(e);
             }
 
@@ -185,7 +188,7 @@ public class TransactionTable {
             try {
                transaction.registerSynchronization(sync);
             } catch (Exception e) {
-               log.failedSynchronizationRegistration(e);
+               log.warn("Failed synchronization registration", e);
                throw new CacheException(e);
             }
          }
@@ -231,19 +234,19 @@ public class TransactionTable {
       }
 
       if (toKill.isEmpty())
-         log.tracef("No global transactions pertain to originator(s) %s who have left the cluster.", leavers);
+         log.trace("No global transactions pertain to originator(s) " + leavers + " who have left the cluster.");
       else
-         log.tracef("%s global transactions pertain to leavers list %s and need to be killed", toKill.size(), leavers);
+         log.trace(toKill.size() + " global transactions pertain to leavers list " + leavers + " and need to be killed");
 
       for (GlobalTransaction gtx : toKill) {
-         log.tracef("Killing remote transaction originating on leaver %s", gtx);
+         log.trace("Killing remote transaction originating on leaver " + gtx);
          RollbackCommand rc = new RollbackCommand(cacheName, gtx);
          rc.init(invoker, icc, TransactionTable.this);
          try {
             rc.perform(null);
-            log.tracef("Rollback of transaction %s complete.", gtx);
+            log.trace("Rollback of transaction " + gtx + " complete.");
          } catch (Throwable e) {
-            log.unableToRollbackGlobalTx(gtx, e);
+            log.warn("Unable to roll back global transaction " + gtx, e);
          }
       }
 
@@ -260,7 +263,7 @@ public class TransactionTable {
 
    public void remoteTransactionRollback(GlobalTransaction gtx) {
       final RemoteTransaction remove = removeRemoteTransaction(gtx);
-      log.tracef("Removed local transaction %s? %b", gtx, remove);
+      log.trace("Removed local transaction " + gtx + "? " + remove);
    }
 
    /**
@@ -289,13 +292,13 @@ public class TransactionTable {
    private void registerRemoteTransaction(GlobalTransaction gtx, RemoteTransaction rtx) {
       RemoteTransaction transaction = remoteTransactions.put(gtx, rtx);
       if (transaction != null) {
-         log.remoteTxAlreadyRegistered();
+         log.error("A remote transaction with the given id was already registered!!!");
          throw new IllegalStateException("A remote transaction with the given id was already registered!!!");
       }
 
-      log.tracef("Created and registered remote transaction %s", rtx);
+      log.trace("Created and registered remote transaction " + rtx);
       if (rtx.getViewId() < minTxViewId) {
-         log.tracef("Changing minimum view ID from %d to %d", minTxViewId, rtx.getViewId());
+         log.trace("Changing minimum view ID from " + minTxViewId + " to " +  rtx.getViewId());
          minTxViewId = rtx.getViewId();
       }
    }
@@ -313,7 +316,7 @@ public class TransactionTable {
          }
          GlobalTransaction tx = txFactory.newGlobalTransaction(localAddress, false);
          current = txFactory.newLocalTransaction(transaction, tx, ctx.isImplicitTransaction(), currentViewId);
-         log.tracef("Created a new local transaction: %s", current);
+         log.trace("Created a new local transaction: " + current);
          localTransactions.put(transaction, current);
          notifier.notifyTransactionRegistered(tx, ctx);
       }
@@ -340,7 +343,7 @@ public class TransactionTable {
          if (clustered) {
             recalculateMinViewIdIfNeeded(cacheTransaction);
          }
-         log.tracef("Removed %s from transaction table.", cacheTransaction);
+         log.trace("Removed " + cacheTransaction + " from transaction table.");
          cacheTransaction.notifyOnTransactionFinished();
       }
    }
@@ -406,7 +409,11 @@ public class TransactionTable {
          // Assume that we only get here if we are clustered.
          int removedTransactionViewId = removedTransaction.getViewId();
          if (removedTransactionViewId < minTxViewId) {
-            log.tracef("A transaction has a view ID (%s) that is smaller than the smallest transaction view ID (%s) this node knows about!  This can happen if a concurrent thread recalculates the minimum view ID after the current transaction has been removed from the transaction table.", removedTransactionViewId, minTxViewId);
+            log.trace("A transaction has a view ID (" + removedTransactionViewId + ") that is smaller " +
+            		"than the smallest transaction view ID (" + minTxViewId + ") this node knows about!  " +
+            		"This can happen if a concurrent thread recalculates the minimum " +
+            		"view ID after the current transaction has been removed " +
+            		"from the transaction table.");
          } else if (removedTransactionViewId == minTxViewId && removedTransactionViewId < currentViewId) {
             // We should only need to re-calculate the minimum view ID if the transaction being completed
             // has the same ID as the smallest known transaction ID, to check what the new smallest is, and this is
@@ -425,7 +432,7 @@ public class TransactionTable {
             useStrictTopologyIdComparison = tce.getNewTopologyId() != currentViewId;
             currentViewId = tce.getNewTopologyId();
          } else {
-            log.debugf("Topology changed, recalculating minViewId");
+            log.debug("Topology changed, recalculating minViewId");
             calculateMinViewId(-1);
          }
       }
@@ -461,10 +468,10 @@ public class TransactionTable {
                if (viewId < minViewIdFound) minViewIdFound = viewId;
             }
             if (minViewIdFound != minTxViewId) {
-               log.tracef("Changing minimum view ID from %s to %s", minTxViewId, minViewIdFound);
+               log.trace("Changing minimum view ID from " + minTxViewId + " to " +  minViewIdFound);
                minTxViewId = minViewIdFound;
             } else {
-               log.tracef("Minimum view ID still is %s; nothing to change", minViewIdFound);
+               log.trace("Minimum view ID still is " + minViewIdFound + "; nothing to change");
             }
          }
       } finally {
@@ -478,7 +485,7 @@ public class TransactionTable {
 
    private void shutDownGracefully() {
       if (log.isDebugEnabled())
-         log.debugf("Wait for on-going transactions to finish for %s.", Util.prettyPrintTime(configuration.transaction().cacheStopTimeout(), TimeUnit.MILLISECONDS));
+         log.debug("Wait for on-going transactions to finish for " + Util.prettyPrintTime(configuration.transaction().cacheStopTimeout(), TimeUnit.MILLISECONDS));
       long failTime = currentMillisFromNanotime() + configuration.transaction().cacheStopTimeout();
       boolean txsOnGoing = areTxsOnGoing();
       while (txsOnGoing && currentMillisFromNanotime() < failTime) {
@@ -488,16 +495,19 @@ public class TransactionTable {
          } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             if (clustered) {
-               log.debugf("Interrupted waiting for on-going transactions to finish. %s local transactions and %s remote transactions", localTransactions.size(), remoteTransactions.size());
+               log.debug("Interrupted waiting for on-going transactions to " +
+               		"finish. " + localTransactions.size() + " local transactions " +
+               		"and " + remoteTransactions.size() + " remote transactions");
             } else {
-               log.debugf("Interrupted waiting for %s on-going transactions to finish.", localTransactions.size());
+               log.debug("Interrupted waiting for " + localTransactions.size()  + " on-going transactions to finish.");
             }
          }
       }
 
       if (txsOnGoing) {
-         log.unfinishedTransactionsRemain(localTransactions == null ? 0 : localTransactions.size(),
-                                          remoteTransactions == null ? 0 : remoteTransactions.size());
+         log.warn("Stopping, but there are " + (localTransactions == null ? 0 : localTransactions.size()) 
+        		 + " local transactions and " + (remoteTransactions == null ? 0 : remoteTransactions.size()) 
+        		 + " remote transactions that did not finish in time.");
       } else {
          log.debug("All transactions terminated");
       }

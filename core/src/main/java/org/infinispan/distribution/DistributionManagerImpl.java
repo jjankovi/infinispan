@@ -22,6 +22,14 @@
  */
 package org.infinispan.distribution;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.infinispan.commands.CommandsFactory;
 import org.infinispan.commands.FlagAffectedCommand;
 import org.infinispan.commands.remote.ClusteredGetCommand;
@@ -36,7 +44,6 @@ import org.infinispan.factories.annotations.Inject;
 import org.infinispan.factories.annotations.Start;
 import org.infinispan.jmx.annotations.MBean;
 import org.infinispan.jmx.annotations.ManagedOperation;
-import org.infinispan.statetransfer.StateTransferManager;
 import org.infinispan.remoting.responses.ClusteredGetResponseValidityFilter;
 import org.infinispan.remoting.responses.Response;
 import org.infinispan.remoting.responses.SuccessfulResponse;
@@ -44,14 +51,13 @@ import org.infinispan.remoting.rpc.ResponseFilter;
 import org.infinispan.remoting.rpc.ResponseMode;
 import org.infinispan.remoting.rpc.RpcManager;
 import org.infinispan.remoting.transport.Address;
+import org.infinispan.statetransfer.StateTransferManager;
 import org.infinispan.transaction.xa.GlobalTransaction;
 import org.infinispan.util.Immutables;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 import org.rhq.helpers.pluginAnnotations.agent.Operation;
 import org.rhq.helpers.pluginAnnotations.agent.Parameter;
-
-import java.util.*;
 
 /**
  * The default distribution manager implementation
@@ -66,7 +72,7 @@ import java.util.*;
  */
 @MBean(objectName = "DistributionManager", description = "Component that handles distribution of content across a cluster")
 public class DistributionManagerImpl implements DistributionManager {
-   private static final Log log = LogFactory.getLog(DistributionManagerImpl.class);
+   private static final ALogger log = LogFactory.getLog(DistributionManagerImpl.class);
    private static final boolean trace = log.isTraceEnabled();
 
    // Injected components
@@ -93,7 +99,7 @@ public class DistributionManagerImpl implements DistributionManager {
    // The DMI is cache-scoped, so it will always start after the RMI, which is global-scoped
    @Start(priority = 20)
    private void start() throws Exception {
-      if (trace) log.tracef("starting distribution manager on %s", getAddress());
+      if (trace) log.trace("starting distribution manager on " + getAddress());
    }
 
    private Address getAddress() {

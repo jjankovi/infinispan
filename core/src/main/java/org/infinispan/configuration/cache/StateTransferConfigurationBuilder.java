@@ -19,11 +19,11 @@
 
 package org.infinispan.configuration.cache;
 
-import org.infinispan.config.ConfigurationException;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.util.concurrent.TimeUnit;
+
+import org.infinispan.config.ConfigurationException;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * Configures how state is transferred when a cache joins or leaves the cluster. Used in distributed and
@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 public class StateTransferConfigurationBuilder extends
       AbstractClusteringConfigurationChildBuilder<StateTransferConfiguration> {
 
-   private static final Log log = LogFactory.getLog(StateTransferConfigurationBuilder.class);
+   private static final ALogger log = LogFactory.getLog(StateTransferConfigurationBuilder.class);
 
    private Boolean fetchInMemoryState = null;
    private int chunkSize = 10000;

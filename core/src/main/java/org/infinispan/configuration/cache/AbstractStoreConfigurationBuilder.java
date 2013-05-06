@@ -19,7 +19,7 @@
 
 package org.infinispan.configuration.cache;
 
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /*
@@ -29,7 +29,7 @@ import org.infinispan.util.logging.LogFactory;
 public abstract class AbstractStoreConfigurationBuilder<T extends StoreConfiguration, S extends AbstractStoreConfigurationBuilder<T, S>> extends
       AbstractLoaderConfigurationBuilder<T, S> implements StoreConfigurationBuilder<T, S> {
 
-   private static final Log log = LogFactory.getLog(LegacyStoreConfigurationBuilder.class);
+   private static final ALogger log = LogFactory.getLog(LegacyStoreConfigurationBuilder.class);
 
    protected final AsyncStoreConfigurationBuilder async;
    protected final SingletonStoreConfigurationBuilder singletonStore;
@@ -125,12 +125,13 @@ public abstract class AbstractStoreConfigurationBuilder<T extends StoreConfigura
       ConfigurationBuilder builder = getBuilder();
       if (!loaders().shared() && !fetchPersistentState && !purgeOnStartup
             && builder.clustering().cacheMode().isClustered())
-         log.staleEntriesWithoutFetchPersistentStateOrPurgeOnStartup();
+         log.warn("Fetch persistent state and purge on startup are both disabled, " +
+         		"cache may contain stale entries on startup");
 
       if (loaders().shared() && !loaders().preload()
             && builder.indexing().enabled()
             && builder.indexing().indexLocalOnly())
-         log.localIndexingWithSharedCacheLoaderRequiresPreload();
+         log.debug("When indexing locally a cache with shared cache loader, preload must be enabled");
    }
 
 }

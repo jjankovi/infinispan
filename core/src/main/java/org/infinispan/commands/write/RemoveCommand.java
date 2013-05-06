@@ -22,6 +22,8 @@
  */
 package org.infinispan.commands.write;
 
+import java.util.Set;
+
 import org.infinispan.commands.Visitor;
 import org.infinispan.container.entries.CacheEntry;
 import org.infinispan.container.entries.MVCCEntry;
@@ -29,11 +31,8 @@ import org.infinispan.context.Flag;
 import org.infinispan.context.InvocationContext;
 import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.notifications.cachelistener.CacheNotifier;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.Set;
-
 
 /**
  * @author Mircea.Markus@jboss.com
@@ -41,7 +40,7 @@ import java.util.Set;
  * @since 4.0
  */
 public class RemoveCommand extends AbstractDataWriteCommand {
-   private static final Log log = LogFactory.getLog(RemoveCommand.class);
+   private static final ALogger log = LogFactory.getLog(RemoveCommand.class);
    public static final byte COMMAND_ID = 10;
    protected CacheNotifier notifier;
    boolean successful = true;

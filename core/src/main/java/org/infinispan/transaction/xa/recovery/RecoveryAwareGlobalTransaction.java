@@ -22,17 +22,17 @@
  */
 package org.infinispan.transaction.xa.recovery;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Set;
+
 import org.infinispan.marshall.Ids;
 import org.infinispan.remoting.transport.Address;
 import org.infinispan.transaction.xa.GlobalTransaction;
 import org.infinispan.transaction.xa.TransactionFactory;
 import org.infinispan.util.Util;
-
-import javax.transaction.xa.Xid;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.Set;
+import org.transaction.xa.Xid;
 
 /**
  * GlobalTransaction that also holds xid information, required for recovery.

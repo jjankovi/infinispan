@@ -22,15 +22,15 @@
  */
 package org.infinispan.transaction.lookup;
 
+import java.lang.reflect.Method;
+
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.factories.annotations.Inject;
 import org.infinispan.util.Util;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.TransactionManager;
-import javax.transaction.UserTransaction;
-import java.lang.reflect.Method;
+import org.transaction.TransactionManager;
+import org.transaction.UserTransaction;
 
 /**
  * JTA standalone TM lookup.
@@ -40,7 +40,7 @@ import java.lang.reflect.Method;
  */
 public class JBossStandaloneJTAManagerLookup implements TransactionManagerLookup {
    private Method manager, user;
-   private static final Log log = LogFactory.getLog(JBossStandaloneJTAManagerLookup.class);
+   private static final ALogger log = LogFactory.getLog(JBossStandaloneJTAManagerLookup.class);
 
    /**
     * @deprecated Use {@link #init(org.infinispan.configuration.cache.Configuration)} instead.
@@ -70,7 +70,7 @@ public class JBossStandaloneJTAManagerLookup implements TransactionManagerLookup
    @Override
    public synchronized TransactionManager getTransactionManager() throws Exception {
       TransactionManager tm = (TransactionManager) manager.invoke(null);
-      if (log.isInfoEnabled()) log.retrievingTm(tm);
+      if (log.isInfoEnabled()) log.info("Retrieving transaction manager " + tm);
       return tm;
    }
 

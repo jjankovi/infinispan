@@ -28,10 +28,9 @@ import org.infinispan.remoting.transport.Address;
 import org.infinispan.transaction.LocalTransaction;
 import org.infinispan.transaction.RemoteTransaction;
 import org.infinispan.transaction.TransactionTable;
-
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
+import org.transaction.SystemException;
+import org.transaction.Transaction;
+import org.transaction.TransactionManager;
 
 /**
  * Invocation context to be used for transactional caches.

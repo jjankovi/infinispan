@@ -23,19 +23,18 @@
 
 package org.infinispan.interceptors.locking;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import org.infinispan.commands.write.InvalidateCommand;
 import org.infinispan.commands.write.InvalidateL1Command;
 import org.infinispan.container.DataContainer;
 import org.infinispan.container.EntryFactory;
-import org.infinispan.context.Flag;
 import org.infinispan.context.InvocationContext;
 import org.infinispan.factories.annotations.Inject;
 import org.infinispan.interceptors.base.CommandInterceptor;
 import org.infinispan.util.concurrent.TimeoutException;
 import org.infinispan.util.concurrent.locks.LockManager;
-
-import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * Base class for various locking interceptors in this package.
@@ -88,7 +87,7 @@ public abstract class AbstractLockingInterceptor extends CommandInterceptor {
                try {
                   lockKey(ctx, key, 0, skipLocking);
                } catch (TimeoutException te) {
-                  getLog().unableToLockToInvalidate(key, cdl.getAddress());
+                  getLog().warn("Could not lock key " + key + " in order to invalidate from L1 at node " + cdl.getAddress() + ", skipping....");
                   keysCopy.remove(key);
                   if (keysCopy.isEmpty())
                      return null;

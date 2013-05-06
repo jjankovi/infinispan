@@ -19,20 +19,20 @@
 
 package org.infinispan.xsite;
 
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import org.infinispan.Cache;
 import org.infinispan.commands.VisitableCommand;
 import org.infinispan.commands.remote.SingleRpcCommand;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.factories.annotations.Inject;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 import org.jgroups.protocols.relay.SiteAddress;
 import org.jgroups.protocols.relay.SiteUUID;
-
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author Mircea Markus
@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class BackupReceiverRepositoryImpl implements BackupReceiverRepository {
 
-   private static Log log = LogFactory.getLog(BackupReceiverRepositoryImpl.class);
+   private static ALogger log = LogFactory.getLog(BackupReceiverRepositoryImpl.class);
 
    public static final ConcurrentMap<SiteCachePair, BackupReceiver> backupReceivers =
          new ConcurrentHashMap<SiteCachePair, BackupReceiver>();
@@ -54,7 +54,7 @@ public class BackupReceiverRepositoryImpl implements BackupReceiverRepository {
 
    @Override
    public Object handleRemoteCommand(SingleRpcCommand cmd, SiteAddress src) throws Throwable {
-      log.tracef("Handling command %s from remote site %s", cmd, src);
+      log.trace("Handling command " + cmd + " from remote site " + src);
       String name = cmd.getCacheName();
       BackupReceiver localBackupCache = getBackupCacheManager(SiteUUID.getSiteName(src.getSite()), name);
       return localBackupCache.handleRemoteCommand((VisitableCommand)cmd.getCommand());
@@ -89,8 +89,8 @@ public class BackupReceiverRepositoryImpl implements BackupReceiverRepository {
             return backupReceivers.get(toLookFor);
          }
       }
-      log.debugf("Did not find any backup explicitly configured backup cache for remote cache/site: %s/%s. Using %s",
-                 remoteSite, remoteCache, remoteCache);
+      log.debug("Did not find any backup explicitly configured backup cache for remote cache/site: " 
+    		  + remoteSite + "/" + remoteCache + ". Using " + remoteCache);
 
       Cache<Object, Object> cache = cacheManager.getCache(remoteCache);
       backupReceivers.putIfAbsent(toLookFor, new BackupReceiver(cache));
@@ -100,7 +100,8 @@ public class BackupReceiverRepositoryImpl implements BackupReceiverRepository {
    private boolean isBackupForRemoteCache(String remoteSite, String remoteCache, Configuration cacheConfiguration, String name) {
       boolean found = cacheConfiguration.sites().backupFor().isBackupFor(remoteSite, remoteCache);
       if (found)
-         log.tracef("Found local cache '%s' is backup for cache '%s' from site '%s'", name, remoteCache, remoteSite);
+         log.trace("Found local cache '" + name + "' is backup for cache '" 
+        		 + remoteCache + "' from site '" + remoteSite + "'");
       return found;
    }
 

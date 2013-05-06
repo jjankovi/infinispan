@@ -22,16 +22,16 @@
  */
 package org.infinispan.context.impl;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.infinispan.commands.write.WriteCommand;
 import org.infinispan.container.entries.CacheEntry;
 import org.infinispan.transaction.AbstractCacheTransaction;
 import org.infinispan.transaction.RemoteTransaction;
 import org.infinispan.transaction.xa.GlobalTransaction;
-
-import javax.transaction.Transaction;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import org.transaction.Transaction;
 
 /**
  * Context to be used for transaction that originated remotely.

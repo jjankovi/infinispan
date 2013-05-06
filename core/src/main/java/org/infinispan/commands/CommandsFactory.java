@@ -22,6 +22,12 @@
  */
 package org.infinispan.commands;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+
 import org.infinispan.atomic.Delta;
 import org.infinispan.commands.control.LockControlCommand;
 import org.infinispan.commands.read.DistributedExecuteCommand;
@@ -44,25 +50,28 @@ import org.infinispan.commands.tx.PrepareCommand;
 import org.infinispan.commands.tx.RollbackCommand;
 import org.infinispan.commands.tx.VersionedCommitCommand;
 import org.infinispan.commands.tx.VersionedPrepareCommand;
-import org.infinispan.commands.write.*;
+import org.infinispan.commands.write.ApplyDeltaCommand;
+import org.infinispan.commands.write.ClearCommand;
+import org.infinispan.commands.write.EvictCommand;
+import org.infinispan.commands.write.InvalidateCommand;
+import org.infinispan.commands.write.PutKeyValueCommand;
+import org.infinispan.commands.write.PutMapCommand;
+import org.infinispan.commands.write.RemoveCommand;
+import org.infinispan.commands.write.ReplaceCommand;
+import org.infinispan.commands.write.VersionedPutKeyValueCommand;
+import org.infinispan.commands.write.WriteCommand;
 import org.infinispan.container.versioning.EntryVersion;
 import org.infinispan.context.Flag;
 import org.infinispan.distexec.mapreduce.Mapper;
 import org.infinispan.distexec.mapreduce.Reducer;
 import org.infinispan.factories.scopes.Scope;
 import org.infinispan.factories.scopes.Scopes;
+import org.infinispan.remoting.transport.Address;
 import org.infinispan.statetransfer.StateChunk;
 import org.infinispan.statetransfer.StateRequestCommand;
 import org.infinispan.statetransfer.StateResponseCommand;
-import org.infinispan.remoting.transport.Address;
 import org.infinispan.transaction.xa.GlobalTransaction;
-
-import javax.transaction.xa.Xid;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
+import org.transaction.xa.Xid;
 
 /**
  * A factory to build commands, initializing and injecting dependencies accordingly.  Commands built for a specific,

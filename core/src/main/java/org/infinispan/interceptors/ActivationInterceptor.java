@@ -22,6 +22,9 @@
  */
 package org.infinispan.interceptors;
 
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.log4j.Logger;
 import org.infinispan.commands.read.GetKeyValueCommand;
 import org.infinispan.commands.write.PutKeyValueCommand;
 import org.infinispan.commands.write.PutMapCommand;
@@ -35,13 +38,11 @@ import org.infinispan.jmx.annotations.ManagedAttribute;
 import org.infinispan.jmx.annotations.ManagedOperation;
 import org.infinispan.loaders.CacheLoaderException;
 import org.infinispan.loaders.CacheStore;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 import org.rhq.helpers.pluginAnnotations.agent.MeasurementType;
 import org.rhq.helpers.pluginAnnotations.agent.Metric;
 import org.rhq.helpers.pluginAnnotations.agent.Operation;
-
-import java.util.concurrent.atomic.AtomicLong;
 
 @MBean(objectName = "Activation", description = "Component that handles activating entries that have been passivated to a CacheStore by loading them into memory.")
 public class ActivationInterceptor extends CacheLoaderInterceptor {
@@ -49,11 +50,11 @@ public class ActivationInterceptor extends CacheLoaderInterceptor {
    private final AtomicLong activations = new AtomicLong(0);
    private CacheStore store;
 
-   private static final Log log = LogFactory.getLog(ActivationInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(ActivationInterceptor.class);
    private static final boolean trace = log.isTraceEnabled();
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 

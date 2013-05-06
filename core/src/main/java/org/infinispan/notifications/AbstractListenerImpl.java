@@ -22,16 +22,6 @@
  */
 package org.infinispan.notifications;
 
-import org.infinispan.CacheException;
-import org.infinispan.factories.KnownComponentNames;
-import org.infinispan.factories.annotations.ComponentName;
-import org.infinispan.factories.annotations.Inject;
-import org.infinispan.factories.annotations.Start;
-import org.infinispan.factories.annotations.Stop;
-import org.infinispan.util.ReflectionUtil;
-import org.infinispan.util.concurrent.WithinThreadExecutor;
-import org.infinispan.util.logging.Log;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -43,6 +33,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+
+import org.infinispan.CacheException;
+import org.infinispan.factories.KnownComponentNames;
+import org.infinispan.factories.annotations.ComponentName;
+import org.infinispan.factories.annotations.Inject;
+import org.infinispan.factories.annotations.Start;
+import org.infinispan.factories.annotations.Stop;
+import org.infinispan.util.ReflectionUtil;
+import org.infinispan.util.concurrent.WithinThreadExecutor;
+import org.infinispan.util.logging.ALogger;
 
 /**
  * Functionality common to both {@link org.infinispan.notifications.cachemanagerlistener.CacheManagerNotifierImpl} and
@@ -82,7 +82,7 @@ public abstract class AbstractListenerImpl {
       if (syncProcessor != null) syncProcessor.shutdownNow();
    }
 
-   protected abstract Log getLog();
+   protected abstract ALogger getLog();
 
    protected abstract Map<Class<? extends Annotation>, Class<?>> getAllowedMethodAnnotations();
 
@@ -145,7 +145,9 @@ public abstract class AbstractListenerImpl {
       }
 
       if (!foundMethods)
-         getLog().noAnnotateMethodsFoundInListener(listener.getClass());
+         getLog().warn("Attempted to register listener of class " + listener.getClass() + ", but no valid, " +
+         "public methods annotated with method-level event annotations found! " +
+         "Ignoring listener.");
    }
 
    private void addListenerInvocation(Class<? extends Annotation> annotation, ListenerInvocation li) {
@@ -207,11 +209,13 @@ public abstract class AbstractListenerImpl {
                         , cause.getClass().getName(), method, target
                      ), cause);
                   } else {
-                     getLog().unableToInvokeListenerMethod(method, target, cause);
+                     getLog().warn("Unable to invoke method " + method + " on Object instance " + target + " - " +
+         "removing this target object from list of listeners!", cause);
                   }
                }
                catch (IllegalAccessException exception) {
-                  getLog().unableToInvokeListenerMethod(method, target, exception);
+            	   getLog().warn("Unable to invoke method " + method + " on Object instance " + target + " - " +
+            		         "removing this target object from list of listeners!", exception);
                   removeListener(target);
                }
             }

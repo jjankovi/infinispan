@@ -23,11 +23,11 @@
 
 package org.infinispan.marshall;
 
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * The {@link BufferSizePredictor} that automatically increases and
@@ -47,7 +47,7 @@ import java.util.List;
  */
 public class AdaptiveBufferSizePredictor implements BufferSizePredictor {
 
-   private static final Log log = LogFactory.getLog(AdaptiveBufferSizePredictor.class);
+   private static final ALogger log = LogFactory.getLog(AdaptiveBufferSizePredictor.class);
    private static final boolean isTrace = log.isTraceEnabled();
 
    static final int DEFAULT_MINIMUM = 16;
@@ -167,8 +167,8 @@ public class AdaptiveBufferSizePredictor implements BufferSizePredictor {
    @Override
    public int nextSize(Object obj) {
       if (isTrace)
-         log.tracef("Next predicted buffer size for object type '%s' will be %d",
-               obj == null ? "Null" : obj.getClass().getName(), nextBufferSize);
+         log.trace("Next predicted buffer size for object type '" 
+        		 + obj == null ? "Null" : obj.getClass().getName() + "' will be " + nextBufferSize);
 
       return nextBufferSize;
    }

@@ -18,15 +18,16 @@
  */
 package org.infinispan.configuration.cache;
 
+import java.util.concurrent.TimeUnit;
+
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
 import org.infinispan.transaction.lookup.TransactionManagerLookup;
 import org.infinispan.transaction.lookup.TransactionSynchronizationRegistryLookup;
-import javax.transaction.Synchronization;
-import javax.transaction.TransactionManager;
-import javax.transaction.xa.XAResource;
-import java.util.concurrent.TimeUnit;
+import org.transaction.Synchronization;
+import org.transaction.TransactionManager;
+import org.transaction.xa.XAResource;
 
 /**
  * Defines transactional (JTA) characteristics of the cache.

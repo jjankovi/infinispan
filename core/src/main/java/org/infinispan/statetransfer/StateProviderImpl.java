@@ -23,6 +23,18 @@
 
 package org.infinispan.statetransfer;
 
+import static org.infinispan.factories.KnownComponentNames.ASYNC_TRANSPORT_EXECUTOR;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+
 import org.infinispan.Cache;
 import org.infinispan.commands.CommandsFactory;
 import org.infinispan.commands.write.WriteCommand;
@@ -43,13 +55,8 @@ import org.infinispan.remoting.transport.Address;
 import org.infinispan.topology.CacheTopology;
 import org.infinispan.transaction.TransactionTable;
 import org.infinispan.transaction.xa.CacheTransaction;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-
-import static org.infinispan.factories.KnownComponentNames.ASYNC_TRANSPORT_EXECUTOR;
 
 /**
  * // TODO [anistor] Document this
@@ -60,7 +67,7 @@ import static org.infinispan.factories.KnownComponentNames.ASYNC_TRANSPORT_EXECU
 @Listener
 public class StateProviderImpl implements StateProvider {
 
-   private static final Log log = LogFactory.getLog(StateProviderImpl.class);
+   private static final ALogger log = LogFactory.getLog(StateProviderImpl.class);
    private static final boolean trace = log.isTraceEnabled();
 
    private String cacheName;
@@ -164,7 +171,7 @@ public class StateProviderImpl implements StateProvider {
    @Override
    public void stop() {
       if (trace) {
-         log.tracef("Shutting down StateProvider of cache %s on node %s", cacheName, rpcManager.getAddress());
+         log.trace("Shutting down StateProvider of cache " + cacheName + " on node " + rpcManager.getAddress());
       }
       // cancel all outbound transfers
       try {
@@ -178,13 +185,14 @@ public class StateProviderImpl implements StateProvider {
             }
          }
       } catch (Throwable t) {
-         log.errorf(t, "Failed to stop StateProvider of cache %s on node %s", cacheName, rpcManager.getAddress());
+         log.error("Failed to stop StateProvider of cache " + cacheName + " on node " + rpcManager.getAddress(), t);
       }
    }
 
    public List<TransactionInfo> getTransactionsForSegments(Address destination, int requestTopologyId, Set<Integer> segments) throws InterruptedException {
       if (trace) {
-         log.tracef("Received request for transactions from node %s for segments %s with topology id %d", destination, segments, requestTopologyId);
+         log.trace("Received request for transactions from node " + destination + " for " +
+         		"segments " + segments + " with topology id " + requestTopologyId);
       }
 
       if (readCh == null) {
@@ -192,12 +200,12 @@ public class StateProviderImpl implements StateProvider {
       }
 
       if (requestTopologyId < topologyId) {
-         log.warnf("Transactions were requested by node %s with topology %d, smaller than the local " +
-               "topology (%d)", destination, requestTopologyId, topologyId);
+         log.warn("Transactions were requested by node " + destination + " with topology " 
+        		 + requestTopologyId + ", smaller than the local topology (" + topologyId + ")");
       } else if (requestTopologyId > topologyId) {
-         log.tracef("Transactions were requested by node %s with topology %d, greater than the local " +
-               "topology (%d). Waiting for topology %d to be installed locally.", destination,
-               requestTopologyId, topologyId, requestTopologyId);
+         log.trace("Transactions were requested by node " + destination + " with topology " 
+        		 + requestTopologyId + ", greater than the local " +
+               "topology (" + topologyId + "). Waiting for topology " + requestTopologyId + " to be installed locally.");
          stateTransferLock.waitForTopology(requestTopologyId);
       }
       Set<Integer> ownedSegments = readCh.getSegmentsForOwner(rpcManager.getAddress());
@@ -212,7 +220,7 @@ public class StateProviderImpl implements StateProvider {
          collectTransactionsToTransfer(transactions, transactionTable.getRemoteTransactions(), segments);
          collectTransactionsToTransfer(transactions, transactionTable.getLocalTransactions(), segments);
          if (trace) {
-            log.tracef("Found %d transaction(s) to transfer", transactions.size());
+            log.trace("Found " + transactions.size() + " transaction(s) to transfer");
          }
       }
       return transactions;
@@ -248,16 +256,16 @@ public class StateProviderImpl implements StateProvider {
    @Override
    public void startOutboundTransfer(Address destination, int requestTopologyId, Set<Integer> segments)
          throws InterruptedException {
-      log.tracef("Starting outbound transfer of segments %s to node %s with topology id %d", segments,
-            destination, requestTopologyId);
+      log.trace("Starting outbound transfer of segments " + segments + " to node " + destination 
+    		  + " with topology id " + requestTopologyId);
 
       if (requestTopologyId < topologyId) {
-         log.warnf("Segments were requested by node %s with topology %d, smaller than the local " +
-               "topology (%d)", destination, requestTopologyId, topologyId);
+         log.warn("Segments were requested by node " + destination + " with topology " 
+        		 + requestTopologyId + ", smaller than the local topology (" + topologyId + ")");
       } else if (requestTopologyId > topologyId) {
-         log.tracef("Segments were requested by node %s with topology %d, greater than the local " +
-               "topology (%d). Waiting for topology %d to be installed locally.", destination,
-               requestTopologyId, topologyId, requestTopologyId);
+         log.trace("Segments were requested by node " + destination + " with topology " 
+        		 + requestTopologyId + ", greater than the local topology (" + topologyId + "). " 
+        		 + "Waiting for topology " + requestTopologyId + " to be installed locally.");
          stateTransferLock.waitForTopology(requestTopologyId);
       }
 
@@ -270,7 +278,8 @@ public class StateProviderImpl implements StateProvider {
 
    private void addTransfer(OutboundTransferTask transferTask) {
       if (trace) {
-         log.tracef("Adding outbound transfer of segments %s to %s", transferTask.getSegments(), transferTask.getDestination());
+         log.trace("Adding outbound transfer of segments " + transferTask.getSegments() 
+        		 + " to " + transferTask.getDestination());
       }
       synchronized (transfersByDestination) {
          List<OutboundTransferTask> transfers = transfersByDestination.get(transferTask.getDestination());
@@ -285,7 +294,8 @@ public class StateProviderImpl implements StateProvider {
    @Override
    public void cancelOutboundTransfer(Address destination, int topologyId, Set<Integer> segments) {
       if (trace) {
-         log.tracef("Cancelling outbound transfer of segments %s to node %s with topology id %d", segments, destination, topologyId);
+         log.trace("Cancelling outbound transfer of segments " + segments 
+        		 + " to node " + destination + " with topology id " + topologyId);
       }
       // get the outbound transfers for this address and given segments and cancel the transfers
       synchronized (transfersByDestination) {
@@ -314,8 +324,9 @@ public class StateProviderImpl implements StateProvider {
 
    void onTaskCompletion(OutboundTransferTask transferTask) {
       if (trace) {
-         log.tracef("Removing %s outbound transfer of segments %s to %s",
-               transferTask.isCancelled() ? "cancelled" : "completed", transferTask.getSegments(), transferTask.getDestination());
+    	 String cancelled = transferTask.isCancelled() ? "cancelled" : "completed"; 
+         log.trace("Removing " + cancelled + " outbound transfer of segments " 
+        		 + transferTask.getSegments() + " to " + transferTask.getDestination());
       }
 
       removeTransfer(transferTask);

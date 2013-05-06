@@ -22,14 +22,15 @@
  */
 package org.infinispan.util.concurrent.locks;
 
-import net.jcip.annotations.ThreadSafe;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import net.jcip.annotations.ThreadSafe;
+
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * A simple implementation of lock striping, using cache entry keys to lock on, primarily used to help make {@link
@@ -49,7 +50,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @ThreadSafe
 public class StripedLock {
 
-   private static final Log log = LogFactory.getLog(StripedLock.class);
+   private static final ALogger log = LogFactory.getLog(StripedLock.class);
    private static final boolean trace = log.isTraceEnabled();
 
    private static final int DEFAULT_CONCURRENCY = 20;
@@ -96,10 +97,10 @@ public class StripedLock {
       ReentrantReadWriteLock lock = getLock(key);
       if (exclusive) {
          lock.writeLock().lock();
-         if (trace) log.tracef("WL acquired for '%s'", key);
+         if (trace) log.trace("WL acquired for '" + key + "'");
       } else {
          lock.readLock().lock();
-         if (trace) log.tracef("RL acquired for '%s'", key);
+         if (trace) log.trace("RL acquired for '" + key + "'");
       }
    }
 
@@ -108,15 +109,15 @@ public class StripedLock {
       try {
          if (exclusive) {
             boolean success = lock.writeLock().tryLock(millis, TimeUnit.MILLISECONDS);
-            if (success && trace) log.tracef("WL acquired for '%s'", key);
+            if (success && trace) log.trace("WL acquired for '" + key + "'");
             return success;
          } else {
             boolean success = lock.readLock().tryLock(millis, TimeUnit.MILLISECONDS);
-            if (success && trace) log.tracef("RL acquired for '%s'", key);
+            if (success && trace) log.trace("RL acquired for '" + key + "'");
             return success;
          }
       } catch (InterruptedException e) {
-         log.interruptedAcquiringLock(millis, e);
+         log.error("Interrupted on acquireLock for " + millis + " milliseconds!", e);
          return false;
       }
    }
@@ -128,10 +129,10 @@ public class StripedLock {
       ReentrantReadWriteLock lock = getLock(key);
       if (lock.isWriteLockedByCurrentThread()) {
          lock.writeLock().unlock();
-         if (trace) log.tracef("WL released for '%s'", key);
+         if (trace) log.trace("WL released for '" + key + "'");
       } else {
          lock.readLock().unlock();
-         if (trace) log.tracef("RL released for '%s'", key);
+         if (trace) log.trace("RL released for '" + key + "'");
       }
    }
 
@@ -140,14 +141,14 @@ public class StripedLock {
       lock.readLock().unlock();
       // another thread could come here and take the RL or WL, forcing us to wait
       lock.writeLock().lock();
-      if (trace) log.tracef("RL upgraded to WL for '%s'", key);
+      if (trace) log.trace("RL upgraded to WL for '" + key + "'");
    }
 
    public void downgradeLock(Object key) {
       ReentrantReadWriteLock lock = getLock(key);
       lock.readLock().lock();
       lock.writeLock().unlock();
-      if (trace) log.tracef("WL downgraded to RL for '%s'", key);
+      if (trace) log.trace("WL downgraded to RL for '" + key + "'");
    }
 
    final ReentrantReadWriteLock getLock(Object o) {
@@ -211,14 +212,14 @@ public class StripedLock {
     * Acquires RL on all locks agregated by this StripedLock, in the given timeout.
     */
    public boolean acquireGlobalLock(boolean exclusive, long timeout) {
-      log.tracef("About to acquire global lock. Exclusive? %s", exclusive);
+      log.trace("About to acquire global lock. Exclusive? " + exclusive);
       boolean success = true;
       for (int i = 0; i < sharedLocks.length; i++) {
          Lock toAcquire = exclusive ? sharedLocks[i].writeLock() : sharedLocks[i].readLock();
          try {
             success = toAcquire.tryLock(timeout, TimeUnit.MILLISECONDS);
             if (!success) {
-               if (trace) log.tracef("Could not acquire lock on %s. Exclusive? %b", toAcquire, exclusive);
+               if (trace) log.trace("Could not acquire lock on " + toAcquire + ". Exclusive? " + exclusive);
                break;
             }
          } catch (InterruptedException e) {

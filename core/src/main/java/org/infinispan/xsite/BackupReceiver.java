@@ -19,6 +19,10 @@
 
 package org.infinispan.xsite;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+
 import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.CacheException;
@@ -33,7 +37,6 @@ import org.infinispan.commands.write.PutMapCommand;
 import org.infinispan.commands.write.RemoveCommand;
 import org.infinispan.commands.write.ReplaceCommand;
 import org.infinispan.commands.write.WriteCommand;
-import org.infinispan.configuration.cache.SitesConfiguration;
 import org.infinispan.context.Flag;
 import org.infinispan.context.InvocationContext;
 import org.infinispan.context.impl.TxInvocationContext;
@@ -41,13 +44,9 @@ import org.infinispan.transaction.LocalTransaction;
 import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.TransactionTable;
 import org.infinispan.transaction.xa.GlobalTransaction;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.TransactionManager;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
+import org.transaction.TransactionManager;
 
 /**
  * Component present on a backup site that manages the backup information and logic.
@@ -78,7 +77,7 @@ public class BackupReceiver {
 
    public static final class BackupCacheUpdater extends AbstractVisitor {
 
-      private static Log log = LogFactory.getLog(BackupCacheUpdater.class);
+      private static ALogger log = LogFactory.getLog(BackupCacheUpdater.class);
 
       private final ConcurrentMap<GlobalTransaction, GlobalTransaction> remote2localTx;
 
@@ -92,7 +91,7 @@ public class BackupReceiver {
 
       @Override
       public Object visitPutKeyValueCommand(InvocationContext ctx, PutKeyValueCommand command) throws Throwable {
-         log.tracef("Processing a remote put %s", command);
+         log.trace("Processing a remote put " + command);
          if (command.isConditional()) {
             return backupCache.putIfAbsent(command.getKey(), command.getValue(),
                                            command.getLifespanMillis(), TimeUnit.MILLISECONDS,
@@ -154,9 +153,11 @@ public class BackupReceiver {
       @Override
       public Object visitCommitCommand(TxInvocationContext ctx, CommitCommand command) throws Throwable {
          if (!isTransactional()) {
-            log.cannotRespondToRollback(command.getGlobalTransaction(), backupCache.getName());
+            log.warn("The rollback request for tx " + command.getGlobalTransaction() 
+            		+ " cannot be processed by the cache " + backupCache.getName() 
+            		+ " as this cache is not transactional!");
          } else {
-            log.tracef("Rolling back remote transaction %s", command.getGlobalTransaction());
+            log.trace("Rolling back remote transaction " + command.getGlobalTransaction());
             completeTransaction(command.getGlobalTransaction(), true);
          }
          return null;
@@ -194,7 +195,7 @@ public class BackupReceiver {
          LocalTransaction localTx = txTable().getLocalTransaction(tm.getTransaction());
          localTx.setFromRemoteSite(true);
          if (onePhaseCommit) {
-            log.tracef("Committing remotely originated tx %s as it is 1PC", command.getGlobalTransaction());
+            log.trace("Committing remotely originated tx " + command.getGlobalTransaction() + " as it is 1PC");
             tm.commit();
          } else {
             remote2localTx.put(command.getGlobalTransaction(), localTx.getGlobalTransaction());

@@ -22,6 +22,18 @@
  */
 package org.infinispan.loaders.decorators;
 
+import java.io.ObjectInput;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.infinispan.Cache;
 import org.infinispan.container.DataContainer;
 import org.infinispan.container.entries.InternalCacheEntry;
@@ -36,20 +48,8 @@ import org.infinispan.notifications.cachemanagerlistener.event.Event;
 import org.infinispan.notifications.cachemanagerlistener.event.ViewChangedEvent;
 import org.infinispan.remoting.transport.Address;
 import org.infinispan.transaction.xa.GlobalTransaction;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.io.ObjectInput;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * SingletonStore is a delegating cache store used for situations when only one instance should interact with the
@@ -72,7 +72,7 @@ import java.util.concurrent.TimeoutException;
  * @since 4.0
  */
 public class SingletonStore extends AbstractDelegatingStore {
-   private static final Log log = LogFactory.getLog(SingletonStore.class);
+   private static final ALogger log = LogFactory.getLog(SingletonStore.class);
    private static final boolean trace = log.isTraceEnabled();
 
    EmbeddedCacheManager cacheManager;
@@ -129,9 +129,9 @@ public class SingletonStore extends AbstractDelegatingStore {
    @Override
    public void store(InternalCacheEntry ed) throws CacheLoaderException {
       if (active) {
-         if (trace) log.tracef("Storing key %s.  Instance: %s", ed.getKey(), this);
+         if (trace) log.trace("Storing key " + ed.getKey() + ".  Instance: " + this);
          super.store(ed);
-      } else if (trace) log.tracef("Not storing key %s.  Instance: %s", ed.getKey(), this);
+      } else if (trace) log.trace("Not storing key " + ed.getKey() + ".  Instance: " + this);
    }
 
    @Override
@@ -256,7 +256,7 @@ public class SingletonStore extends AbstractDelegatingStore {
     */
    protected void activeStatusChanged(boolean newActiveState) throws PushStateException {
       active = newActiveState;
-      log.debugf("changed mode %s", this);
+      log.debug("changed mode " + this);
       if (active && config.isPushStateWhenCoordinator()) doPushState();
    }
 
@@ -359,7 +359,7 @@ public class SingletonStore extends AbstractDelegatingStore {
                activeStatusChanged(tmp);
             }
             catch (PushStateException e) {
-               log.errorChangingSingletonStoreStatus(e);
+               log.error("Exception reported changing cache active status", e);
             }
 
          }

@@ -24,9 +24,8 @@ package org.infinispan.batch;
 
 import org.infinispan.CacheException;
 import org.infinispan.factories.annotations.Inject;
-
-import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
+import org.transaction.Transaction;
+import org.transaction.TransactionManager;
 
 /**
  * A container for holding thread locals for batching, to be used with the {@link org.infinispan.Cache#startBatch()} and

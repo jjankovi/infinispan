@@ -22,20 +22,20 @@
  */
 package org.infinispan.notifications.cachelistener;
 
-import org.infinispan.Cache;
-import org.infinispan.container.entries.InternalCacheEntry;
-import org.infinispan.context.InvocationContext;
-import org.infinispan.context.impl.TxInvocationContext;
-import org.infinispan.distribution.ch.ConsistentHash;
-import org.infinispan.factories.annotations.Inject;
-import org.infinispan.notifications.AbstractListenerImpl;
-import org.infinispan.notifications.cachelistener.annotation.*;
-import org.infinispan.notifications.cachelistener.event.*;
-import org.infinispan.remoting.transport.Address;
-import org.infinispan.transaction.xa.GlobalTransaction;
-import org.infinispan.util.InfinispanCollections;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
+import static org.infinispan.notifications.cachelistener.event.Event.Type.CACHE_ENTRY_ACTIVATED;
+import static org.infinispan.notifications.cachelistener.event.Event.Type.CACHE_ENTRY_CREATED;
+import static org.infinispan.notifications.cachelistener.event.Event.Type.CACHE_ENTRY_EVICTED;
+import static org.infinispan.notifications.cachelistener.event.Event.Type.CACHE_ENTRY_INVALIDATED;
+import static org.infinispan.notifications.cachelistener.event.Event.Type.CACHE_ENTRY_LOADED;
+import static org.infinispan.notifications.cachelistener.event.Event.Type.CACHE_ENTRY_MODIFIED;
+import static org.infinispan.notifications.cachelistener.event.Event.Type.CACHE_ENTRY_PASSIVATED;
+import static org.infinispan.notifications.cachelistener.event.Event.Type.CACHE_ENTRY_REMOVED;
+import static org.infinispan.notifications.cachelistener.event.Event.Type.CACHE_ENTRY_VISITED;
+import static org.infinispan.notifications.cachelistener.event.Event.Type.DATA_REHASHED;
+import static org.infinispan.notifications.cachelistener.event.Event.Type.TOPOLOGY_CHANGED;
+import static org.infinispan.notifications.cachelistener.event.Event.Type.TRANSACTION_COMPLETED;
+import static org.infinispan.notifications.cachelistener.event.Event.Type.TRANSACTION_REGISTERED;
+import static org.infinispan.util.InfinispanCollections.transformCollectionToMap;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;
@@ -45,8 +45,48 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static org.infinispan.notifications.cachelistener.event.Event.Type.*;
-import static org.infinispan.util.InfinispanCollections.transformCollectionToMap;
+import org.apache.log4j.Logger;
+import org.infinispan.Cache;
+import org.infinispan.container.entries.InternalCacheEntry;
+import org.infinispan.context.InvocationContext;
+import org.infinispan.context.impl.TxInvocationContext;
+import org.infinispan.distribution.ch.ConsistentHash;
+import org.infinispan.factories.annotations.Inject;
+import org.infinispan.notifications.AbstractListenerImpl;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntriesEvicted;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntryActivated;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntryCreated;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntryEvicted;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntryInvalidated;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntryLoaded;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntryModified;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntryPassivated;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntryRemoved;
+import org.infinispan.notifications.cachelistener.annotation.CacheEntryVisited;
+import org.infinispan.notifications.cachelistener.annotation.DataRehashed;
+import org.infinispan.notifications.cachelistener.annotation.TopologyChanged;
+import org.infinispan.notifications.cachelistener.annotation.TransactionCompleted;
+import org.infinispan.notifications.cachelistener.annotation.TransactionRegistered;
+import org.infinispan.notifications.cachelistener.event.CacheEntriesEvictedEvent;
+import org.infinispan.notifications.cachelistener.event.CacheEntryActivatedEvent;
+import org.infinispan.notifications.cachelistener.event.CacheEntryCreatedEvent;
+import org.infinispan.notifications.cachelistener.event.CacheEntryEvictedEvent;
+import org.infinispan.notifications.cachelistener.event.CacheEntryInvalidatedEvent;
+import org.infinispan.notifications.cachelistener.event.CacheEntryLoadedEvent;
+import org.infinispan.notifications.cachelistener.event.CacheEntryModifiedEvent;
+import org.infinispan.notifications.cachelistener.event.CacheEntryPassivatedEvent;
+import org.infinispan.notifications.cachelistener.event.CacheEntryRemovedEvent;
+import org.infinispan.notifications.cachelistener.event.CacheEntryVisitedEvent;
+import org.infinispan.notifications.cachelistener.event.DataRehashedEvent;
+import org.infinispan.notifications.cachelistener.event.EventImpl;
+import org.infinispan.notifications.cachelistener.event.TopologyChangedEvent;
+import org.infinispan.notifications.cachelistener.event.TransactionCompletedEvent;
+import org.infinispan.notifications.cachelistener.event.TransactionRegisteredEvent;
+import org.infinispan.remoting.transport.Address;
+import org.infinispan.transaction.xa.GlobalTransaction;
+import org.infinispan.util.InfinispanCollections;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * Helper class that handles all notifications to registered listeners.
@@ -57,7 +97,7 @@ import static org.infinispan.util.InfinispanCollections.transformCollectionToMap
  */
 public final class CacheNotifierImpl extends AbstractListenerImpl implements CacheNotifier {
 
-   private static final Log log = LogFactory.getLog(CacheNotifierImpl.class);
+   private static final ALogger log = LogFactory.getLog(CacheNotifierImpl.class);
 
    private static final Map<Class<? extends Annotation>, Class<?>> allowedListeners = new HashMap<Class<? extends Annotation>, Class<?>>(16);
 
@@ -125,7 +165,7 @@ public final class CacheNotifierImpl extends AbstractListenerImpl implements Cac
    }
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 

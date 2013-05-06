@@ -22,11 +22,11 @@
  */
 package org.infinispan.util;
 
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.util.Map;
 import java.util.Properties;
+
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * An extension of TypedProperties that has support for legacy keys.  Construct this Properties type with mappings
@@ -38,7 +38,7 @@ import java.util.Properties;
  */
 public class LegacyKeySupportTypedProperties extends TypedProperties {
    private final Map<String, String> legacyKeyMapping;
-   private static final Log log = LogFactory.getLog(LegacyKeySupportTypedProperties.class);
+   private static final ALogger log = LogFactory.getLog(LegacyKeySupportTypedProperties.class);
 
    public LegacyKeySupportTypedProperties(Properties p, Map<String, String> legacyKeyMapping) {
       super(p);
@@ -51,8 +51,9 @@ public class LegacyKeySupportTypedProperties extends TypedProperties {
 
    private void warnLegacy(String oldKey, String newKey) {
       if (log.isInfoEnabled())
-            log.infof("Could not find value for key %s, but did find value under deprecated key %s. Please use %s as support for %s will eventually be discontinued.",
-            newKey, oldKey);
+            log.info("Could not find value for key " + newKey + ", but did find value under " +
+            		"deprecated key " + oldKey + ". Please use " + newKey + " as support for " + 
+            		oldKey + " will eventually be discontinued.");
    }
 
    @Override

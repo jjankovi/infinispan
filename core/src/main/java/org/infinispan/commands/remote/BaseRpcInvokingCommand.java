@@ -27,7 +27,7 @@ import org.infinispan.commands.VisitableCommand;
 import org.infinispan.context.InvocationContext;
 import org.infinispan.context.InvocationContextContainer;
 import org.infinispan.interceptors.InterceptorChain;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -40,7 +40,7 @@ public abstract class BaseRpcInvokingCommand extends BaseRpcCommand {
    protected InterceptorChain interceptorChain;
    protected InvocationContextContainer icc;
 
-   private static final Log log = LogFactory.getLog(BaseRpcInvokingCommand.class);
+   private static final ALogger log = LogFactory.getLog(BaseRpcInvokingCommand.class);
    private static final boolean trace = log.isTraceEnabled();
 
    protected BaseRpcInvokingCommand(String cacheName) {
@@ -57,10 +57,10 @@ public abstract class BaseRpcInvokingCommand extends BaseRpcCommand {
          VisitableCommand vc = (VisitableCommand) cacheCommand;
          final InvocationContext ctx = icc.createRemoteInvocationContextForCommand(vc, getOrigin());
          if (vc.shouldInvoke(ctx)) {
-            if (trace) log.tracef("Invoking command %s, with originLocal flag set to %b", cacheCommand, ctx.isOriginLocal());
+            if (trace) log.trace("Invoking command " + cacheCommand + ", with originLocal flag set to " + ctx.isOriginLocal());
             return interceptorChain.invoke(ctx, vc);
          } else {
-            if (trace) log.tracef("Not invoking command %s since shouldInvoke() returned false with context %s", cacheCommand, ctx);
+            if (trace) log.trace("Not invoking command " + cacheCommand + " since shouldInvoke() returned false with context " + ctx);
             return null;
          }
          // we only need to return values for a set of remote calls; not every call.

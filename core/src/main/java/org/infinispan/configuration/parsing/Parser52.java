@@ -25,17 +25,29 @@ import static org.infinispan.configuration.cache.CacheMode.INVALIDATION_SYNC;
 import static org.infinispan.configuration.cache.CacheMode.LOCAL;
 import static org.infinispan.configuration.cache.CacheMode.REPL_ASYNC;
 import static org.infinispan.configuration.cache.CacheMode.REPL_SYNC;
+import static org.infinispan.util.StringPropertyReplacer.replaceProperties;
 
 import java.util.Properties;
 
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-
 import org.infinispan.commons.hash.Hash;
 import org.infinispan.config.ConfigurationException;
-import org.infinispan.configuration.cache.*;
+import org.infinispan.configuration.cache.BackupConfiguration;
+import org.infinispan.configuration.cache.BackupConfigurationBuilder;
+import org.infinispan.configuration.cache.BackupFailurePolicy;
+import org.infinispan.configuration.cache.BackupForBuilder;
+import org.infinispan.configuration.cache.ClusterCacheLoaderConfigurationBuilder;
+import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.cache.FileCacheStoreConfigurationBuilder;
 import org.infinispan.configuration.cache.FileCacheStoreConfigurationBuilder.FsyncMode;
+import org.infinispan.configuration.cache.IndexingConfigurationBuilder;
 import org.infinispan.configuration.cache.InterceptorConfiguration.Position;
+import org.infinispan.configuration.cache.InterceptorConfigurationBuilder;
+import org.infinispan.configuration.cache.LegacyLoaderConfigurationBuilder;
+import org.infinispan.configuration.cache.LegacyStoreConfigurationBuilder;
+import org.infinispan.configuration.cache.LoaderConfigurationBuilder;
+import org.infinispan.configuration.cache.LockSupportCacheStoreConfigurationBuilder;
+import org.infinispan.configuration.cache.StoreConfigurationBuilder;
+import org.infinispan.configuration.cache.VersioningScheme;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.configuration.global.ShutdownHookBehavior;
 import org.infinispan.container.DataContainer;
@@ -60,11 +72,11 @@ import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.TransactionManagerLookup;
 import org.infinispan.util.Util;
 import org.infinispan.util.concurrent.IsolationLevel;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-
-import static org.infinispan.util.StringPropertyReplacer.replaceProperties;
+import org.xml.stream.XMLStreamConstants;
+import org.xml.stream.XMLStreamException;
 
 /**
  * This class implements the parser for 5.2 schema files
@@ -74,7 +86,7 @@ import static org.infinispan.util.StringPropertyReplacer.replaceProperties;
  */
 public class Parser52 implements ConfigurationParser<ConfigurationBuilderHolder> {
 
-   private static final Log log = LogFactory.getLog(Parser52.class);
+   private static final ALogger log = LogFactory.getLog(Parser52.class);
 
    private static final Namespace NAMESPACES[] = {
       new Namespace(Namespace.INFINISPAN_NS_BASE_URI, Element.ROOT.getLocalName(), 5, 2),
@@ -712,7 +724,7 @@ public class Parser52 implements ConfigurationParser<ConfigurationBuilderHolder>
                fcscb.purgeSynchronously(purgeSynchronously);
             parseStoreChildren(reader, fcscb);
          } else if (loader instanceof CacheStore){
-            log.deprecatedLoaderAsStoreConfiguration();
+            log.warn("Use of the 'loader' element to configure a store is deprecated, please use the 'store' element instead");
             LegacyStoreConfigurationBuilder scb = builder.loaders().addStore();
             scb.cacheStore((CacheStore)loader);
             if (fetchPersistentState != null)

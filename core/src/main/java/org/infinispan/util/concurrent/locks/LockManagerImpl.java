@@ -22,6 +22,15 @@
  */
 package org.infinispan.util.concurrent.locks;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.locks.Lock;
+
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.container.entries.CacheEntry;
 import org.infinispan.context.InvocationContext;
@@ -31,20 +40,11 @@ import org.infinispan.jmx.annotations.ManagedAttribute;
 import org.infinispan.marshall.MarshalledValue;
 import org.infinispan.util.Util;
 import org.infinispan.util.concurrent.TimeoutException;
-import org.infinispan.util.concurrent.locks.containers.*;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.concurrent.locks.containers.LockContainer;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 import org.rhq.helpers.pluginAnnotations.agent.DataType;
 import org.rhq.helpers.pluginAnnotations.agent.Metric;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.locks.Lock;
-
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Handles locks for the MVCC based LockingInterceptor
@@ -57,7 +57,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class LockManagerImpl implements LockManager {
    protected Configuration configuration;
    protected volatile LockContainer<?> lockContainer;
-   private static final Log log = LogFactory.getLog(LockManagerImpl.class);
+   private static final ALogger log = LogFactory.getLog(LockManagerImpl.class);
    protected static final boolean trace = log.isTraceEnabled();
    private static final String ANOTHER_THREAD = "(another thread)";
 
@@ -69,15 +69,15 @@ public class LockManagerImpl implements LockManager {
 
    @Override
    public boolean lockAndRecord(Object key, InvocationContext ctx, long timeoutMillis) throws InterruptedException {
-      if (trace) log.tracef("Attempting to lock %s with acquisition timeout of %s millis", key, timeoutMillis);
+      if (trace) log.trace("Attempting to lock " + key + " with acquisition timeout of " + timeoutMillis + " millis");
       if (lockContainer.acquireLock(ctx.getLockOwner(), key, timeoutMillis, MILLISECONDS) != null) {
-         if (trace) log.tracef("Successfully acquired lock %s!", key);
+         if (trace) log.trace("Successfully acquired lock " + key + "!");
          return true;
       }
 
       // couldn't acquire lock!
       if (log.isDebugEnabled()) {
-         log.debugf("Failed to acquire lock %s, owner is %s", key, getOwner(key));
+         log.debug("Failed to acquire lock " + key + ", owner is " + getOwner(key));
          Object owner = ctx.getLockOwner();
          Set<Map.Entry<Object, CacheEntry>> entries = ctx.getLookedUpEntries().entrySet();
          List<Object> lockedKeys = new ArrayList<Object>(entries.size());
@@ -87,14 +87,14 @@ public class LockManagerImpl implements LockManager {
                lockedKeys.add(lockedKey);
             }
          }
-         log.debugf("This transaction (%s) already owned locks %s", owner, lockedKeys);
+         log.debug("This transaction (" + owner + ") already owned locks " + lockedKeys);
       }
       return false;
    }
 
    @Override
    public void unlock(Collection<Object> lockedKeys, Object lockOwner) {
-      log.tracef("Attempting to unlock keys %s", lockedKeys);
+      log.trace("Attempting to unlock keys " + lockedKeys);
       for (Object k : lockedKeys) lockContainer.releaseLock(lockOwner, k);
    }
 
@@ -102,7 +102,7 @@ public class LockManagerImpl implements LockManager {
    @SuppressWarnings("unchecked")
    public void unlockAll(InvocationContext ctx) {
       for (Object k : ctx.getLockedKeys()) {
-         if (trace) log.tracef("Attempting to unlock %s", k);
+         if (trace) log.trace("Attempting to unlock " + k);
          lockContainer.releaseLock(ctx.getLockOwner(), k);
       }
       ctx.clearLockedKeys();

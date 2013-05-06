@@ -76,7 +76,7 @@ import org.infinispan.util.concurrent.FutureListener;
 import org.infinispan.util.concurrent.NotifyingFuture;
 import org.infinispan.util.concurrent.NotifyingNotifiableFuture;
 import org.infinispan.util.concurrent.WithinThreadExecutor;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -98,7 +98,7 @@ import org.infinispan.util.logging.LogFactory;
  */
 public class DefaultExecutorService extends AbstractExecutorService implements DistributedExecutorService {
 
-   private static final Log log = LogFactory.getLog(DefaultExecutorService.class);
+   private static final ALogger log = LogFactory.getLog(DefaultExecutorService.class);
    protected final AtomicBoolean isShutdown = new AtomicBoolean(false);
    protected final AdvancedCache cache;
    protected final RpcManager rpc;
@@ -419,12 +419,12 @@ public class DefaultExecutorService extends AbstractExecutorService implements D
       if (rpc.getAddress().equals(address)) {
          invokeLocally(f);
       } else {
-         log.tracef("Sending %s to remote execution at node %s", f, address);
+         log.trace("Sending " + f + " to remote execution at node " + address);
          try {
             rpc.invokeRemotelyInFuture(Collections.singletonList(address), f.getCommand(),
                      (DistributedRunnableFuture<Object>) f);
          } catch (Throwable e) {
-            log.remoteExecutionFailed(address, e);
+            log.warn("Failed remote execution on node " + address, e);
          }
       }
    }
@@ -434,7 +434,7 @@ public class DefaultExecutorService extends AbstractExecutorService implements D
    }
 
    protected <T> void invokeLocally(final DistributedRunnableFuture<T> future) {
-      log.debugf("Sending %s to self", future);
+      log.debug("Sending " + future + " to self");
       try {
          Callable<Object> call = new Callable<Object>() {
 
@@ -461,7 +461,7 @@ public class DefaultExecutorService extends AbstractExecutorService implements D
          future.setNetworkFuture((Future<T>) task);
          localExecutorService.submit(task);
       } catch (Throwable e1) {
-         log.localExecutionFailed(e1);
+         log.warn("Failed local execution ", e1);
       }
    }
 
@@ -508,7 +508,7 @@ public class DefaultExecutorService extends AbstractExecutorService implements D
          throw new IllegalArgumentException("Invalid member list " + members);
 
       if (members.size() < numNeeded) {
-         log.cannotSelectRandomMembers(numNeeded, members);
+         log.warn("Can not select " + numNeeded + " random members for " + members);
          numNeeded = members.size();
       }
       List<Address> membersCopy = new ArrayList<Address>(members);

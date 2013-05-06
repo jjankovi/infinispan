@@ -29,9 +29,9 @@ import org.infinispan.CacheException;
  */
 public class JmxDomainConflictException extends CacheException {
 
-   private static final long serialVersionUID = 8057798477119623578L;
-
-   public JmxDomainConflictException(String msg) {
-      super(msg);
-   }
+//   private static final long serialVersionUID = 8057798477119623578L;
+//
+//   public JmxDomainConflictException(String msg) {
+//      super(msg);
+//   }
 }

@@ -33,7 +33,7 @@ import org.infinispan.context.InvocationContext;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -43,7 +43,7 @@ import org.infinispan.util.logging.LogFactory;
  */
 public class CreateCacheCommand extends BaseRpcCommand {
 
-   private static final Log log = LogFactory.getLog(CreateCacheCommand.class);
+   private static final ALogger log = LogFactory.getLog(CreateCacheCommand.class);
    public static final byte COMMAND_ID = 29;
 
    private EmbeddedCacheManager cacheManager;

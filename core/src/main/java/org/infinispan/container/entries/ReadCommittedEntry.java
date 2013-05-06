@@ -22,14 +22,19 @@
  */
 package org.infinispan.container.entries;
 
+import static org.infinispan.container.entries.ReadCommittedEntry.Flags.CHANGED;
+import static org.infinispan.container.entries.ReadCommittedEntry.Flags.CREATED;
+import static org.infinispan.container.entries.ReadCommittedEntry.Flags.EVICTED;
+import static org.infinispan.container.entries.ReadCommittedEntry.Flags.LOCK_PLACEHOLDER;
+import static org.infinispan.container.entries.ReadCommittedEntry.Flags.REMOVED;
+import static org.infinispan.container.entries.ReadCommittedEntry.Flags.VALID;
+
 import org.infinispan.atomic.AtomicHashMap;
 import org.infinispan.container.DataContainer;
 import org.infinispan.container.versioning.EntryVersion;
 import org.infinispan.util.Util;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import static org.infinispan.container.entries.ReadCommittedEntry.Flags.*;
 
 /**
  * A wrapper around a cached entry that encapsulates read committed semantics when writes are initiated, committed or
@@ -39,7 +44,7 @@ import static org.infinispan.container.entries.ReadCommittedEntry.Flags.*;
  * @since 4.0
  */
 public class ReadCommittedEntry implements MVCCEntry {
-   private static final Log log = LogFactory.getLog(ReadCommittedEntry.class);
+   private static final ALogger log = LogFactory.getLog(ReadCommittedEntry.class);
    private static final boolean trace = log.isTraceEnabled();
 
    protected Object key, value, oldValue;
@@ -182,8 +187,8 @@ public class ReadCommittedEntry implements MVCCEntry {
       // only do stuff if there are changes.
       if (isChanged()) {
          if (trace)
-            log.tracef("Updating entry (key=%s removed=%s valid=%s changed=%s created=%s value=%s]", getKey(),
-                      isRemoved(), isValid(), isChanged(), isCreated(), value);
+            log.trace("Updating entry (key=" + getKey() + " removed=" + isRemoved() + " valid=" 
+            		+ isValid() + " changed=" + isChanged() + " created=" + isCreated() + " value=" + value + "]");
 
          // Ugh!
          if (value instanceof AtomicHashMap) {

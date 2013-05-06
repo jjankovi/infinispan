@@ -23,6 +23,9 @@
 
 package org.infinispan.factories;
 
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+
 import org.infinispan.Cache;
 import org.infinispan.config.ConfigurationException;
 import org.infinispan.configuration.cache.CacheMode;
@@ -36,11 +39,8 @@ import org.infinispan.transaction.xa.recovery.RecoveryAwareRemoteTransaction;
 import org.infinispan.transaction.xa.recovery.RecoveryInfoKey;
 import org.infinispan.transaction.xa.recovery.RecoveryManager;
 import org.infinispan.transaction.xa.recovery.RecoveryManagerImpl;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Factory for RecoveryManager.
@@ -51,7 +51,7 @@ import java.util.concurrent.TimeUnit;
 @DefaultFactoryFor(classes = {RecoveryManager.class})
 public class RecoveryManagerFactory extends AbstractNamedCacheComponentFactory implements AutoInstantiableFactory {
 
-   private static final Log log = LogFactory.getLog(RecoveryManagerFactory.class);
+   private static final ALogger log = LogFactory.getLog(RecoveryManagerFactory.class);
 
    private static final long DEFAULT_EXPIRY = TimeUnit.HOURS.toMillis(6);
 
@@ -62,7 +62,7 @@ public class RecoveryManagerFactory extends AbstractNamedCacheComponentFactory i
             && !configuration.transaction().useSynchronization();
       if (recoveryEnabled) {
          String recoveryCacheName = configuration.transaction().recovery().recoveryInfoCacheName();
-         log.tracef("Using recovery cache name %s", recoveryCacheName);
+         log.trace("Using recovery cache name " + recoveryCacheName);
          EmbeddedCacheManager cm = componentRegistry.getGlobalComponentRegistry().getComponent(EmbeddedCacheManager.class);
          boolean useDefaultCache = recoveryCacheName.equals(RecoveryConfiguration.DEFAULT_RECOVERY_INFO_CACHE);
 
@@ -98,13 +98,13 @@ public class RecoveryManagerFactory extends AbstractNamedCacheComponentFactory i
    }
 
    private RecoveryManager buildRecoveryManager(String cacheName, String recoveryCacheName, EmbeddedCacheManager cm, boolean isDefault) {
-      log.tracef("About to obtain a reference to the recovery cache: %s", recoveryCacheName);
+      log.trace("About to obtain a reference to the recovery cache: " + recoveryCacheName);
       Cache<?, ?> recoveryCache = cm.getCache(recoveryCacheName);
       if (recoveryCache.getConfiguration().isTransactionalCache()) {
          //see comment in getDefaultRecoveryCacheConfig
          throw new ConfigurationException("The recovery cache shouldn't be transactional.");
       }
-      log.tracef("Obtained a reference to the recovery cache: %s", recoveryCacheName);
+      log.trace("Obtained a reference to the recovery cache: " + recoveryCacheName);
       return new RecoveryManagerImpl((ConcurrentMap<RecoveryInfoKey, RecoveryAwareRemoteTransaction>) recoveryCache,  cacheName);
    }
 }

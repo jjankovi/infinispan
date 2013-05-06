@@ -24,10 +24,9 @@ package org.infinispan.transaction.lookup;
 
 import org.infinispan.config.ConfigurationException;
 import org.infinispan.util.Util;
-
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.transaction.TransactionManager;
+import org.naming.InitialContext;
+import org.naming.NamingException;
+import org.transaction.TransactionManager;
 
 
 /**

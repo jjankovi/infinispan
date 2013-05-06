@@ -22,6 +22,8 @@
  */
 package org.infinispan.commands.write;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
@@ -37,10 +39,8 @@ import org.infinispan.distribution.DataLocality;
 import org.infinispan.distribution.DistributionManager;
 import org.infinispan.notifications.cachelistener.CacheNotifier;
 import org.infinispan.remoting.transport.Address;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Invalidates an entry in a L1 cache (used with DIST mode)
@@ -51,7 +51,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class InvalidateL1Command extends InvalidateCommand {
    public static final int COMMAND_ID = 7;
-   private static final Log log = LogFactory.getLog(InvalidateL1Command.class);
+   private static final ALogger log = LogFactory.getLog(InvalidateL1Command.class);
    private DistributionManager dm;
    private DataContainer dataContainer;
    private Configuration config;
@@ -102,7 +102,7 @@ public class InvalidateL1Command extends InvalidateCommand {
    @Override
    public Object perform(InvocationContext ctx) throws Throwable {
       final boolean trace = log.isTraceEnabled();
-      if (trace) log.tracef("Preparing to invalidate keys %s", Arrays.asList(keys));
+      if (trace) log.trace("Preparing to invalidate keys " + Arrays.asList(keys) );
       for (Object k : getKeys()) {
          InternalCacheEntry ice = dataContainer.get(k);
          if (ice != null) {
@@ -120,7 +120,7 @@ public class InvalidateL1Command extends InvalidateCommand {
                   if (trace) log.trace("Not removing, instead entry will be stored in L1");
                   // don't need to do anything here, DistLockingInterceptor.commitEntry() will put the entry in L1
                } else {
-               	if (trace) log.tracef("Invalidating key %s.", k);
+               	if (trace) log.trace("Invalidating key " +  k + ".");
                   invalidate(ctx, k);
                }
             }

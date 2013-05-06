@@ -22,6 +22,13 @@
  */
 package org.infinispan.interceptors;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.infinispan.commands.FlagAffectedCommand;
 import org.infinispan.commands.read.GetKeyValueCommand;
 import org.infinispan.commands.write.InvalidateCommand;
@@ -47,19 +54,12 @@ import org.infinispan.loaders.CacheLoaderManager;
 import org.infinispan.loaders.CacheStore;
 import org.infinispan.loaders.decorators.ChainingCacheStore;
 import org.infinispan.notifications.cachelistener.CacheNotifier;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 import org.rhq.helpers.pluginAnnotations.agent.DisplayType;
 import org.rhq.helpers.pluginAnnotations.agent.MeasurementType;
 import org.rhq.helpers.pluginAnnotations.agent.Metric;
 import org.rhq.helpers.pluginAnnotations.agent.Operation;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 @MBean(objectName = "CacheLoader", description = "Component that handles loading entries from a CacheStore into memory.")
 public class CacheLoaderInterceptor extends JmxStatsCommandInterceptor {
@@ -72,10 +72,10 @@ public class CacheLoaderInterceptor extends JmxStatsCommandInterceptor {
    protected volatile boolean enabled = true;
    private EntryFactory entryFactory;
 
-   private static final Log log = LogFactory.getLog(CacheLoaderInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(CacheLoaderInterceptor.class);
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 

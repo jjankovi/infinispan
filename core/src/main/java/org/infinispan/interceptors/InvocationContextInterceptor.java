@@ -42,13 +42,12 @@ import org.infinispan.manager.CacheContainer;
 import org.infinispan.statetransfer.StateTransferInProgressException;
 import org.infinispan.transaction.TransactionTable;
 import org.infinispan.transaction.WriteSkewException;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.Status;
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
+import org.transaction.Status;
+import org.transaction.SystemException;
+import org.transaction.Transaction;
+import org.transaction.TransactionManager;
 
 /**
  * @author Mircea.Markus@jboss.com
@@ -61,12 +60,12 @@ public class InvocationContextInterceptor extends CommandInterceptor {
    private TransactionTable txTable;
    private InvocationContextContainer invocationContextContainer;
 
-   private static final Log log = LogFactory.getLog(InvocationContextInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(InvocationContextInterceptor.class);
    private static final boolean trace = log.isTraceEnabled();
    private volatile boolean shuttingDown = false;
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 
@@ -103,7 +102,7 @@ public class InvocationContextInterceptor extends CommandInterceptor {
       try {
          ComponentStatus status = componentRegistry.getStatus();
          if (command.ignoreCommandOnStatus(status)) {
-            log.debugf("Status: %s : Ignoring %s command", status, command);
+            log.debug("Status: " + status + " : Ignoring " + command + " command");
             return null;
          }
 
@@ -122,7 +121,7 @@ public class InvocationContextInterceptor extends CommandInterceptor {
          LogFactory.pushNDC(componentRegistry.getCacheName(), trace);
 
          try {
-            if (trace) log.tracef("Invoked with command %s and InvocationContext [%s]", command, ctx);
+            if (trace) log.trace("Invoked with command " + command + " and InvocationContext [" + ctx + "]");
             if (ctx == null) throw new IllegalStateException("Null context not allowed!!");
 
             try {
@@ -150,7 +149,7 @@ public class InvocationContextInterceptor extends CommandInterceptor {
                         // We log this as DEBUG rather than ERROR - see ISPN-2076
                         log.debug("Exception executing call", th);
                      } else {
-                        log.executionError(th);
+                        log.error("Execution error", th);
                      }
                   } else {
                      log.trace("Exception while executing code", th);

@@ -23,7 +23,7 @@
 
 package org.infinispan.util;
 
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -63,7 +63,7 @@ import org.infinispan.util.logging.LogFactory;
  */
 public class Base64 {
 
-   private static final Log log = LogFactory.getLog(Base64.class);
+   private static final ALogger log = LogFactory.getLog(Base64.class);
 
    /* ********  P U B L I C   F I E L D S  ******** */
 

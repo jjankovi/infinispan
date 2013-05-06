@@ -22,6 +22,12 @@
  */
 package org.infinispan.commands.tx;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.infinispan.commands.Visitor;
 import org.infinispan.commands.write.PutKeyValueCommand;
 import org.infinispan.commands.write.RemoveCommand;
@@ -34,14 +40,8 @@ import org.infinispan.notifications.cachelistener.CacheNotifier;
 import org.infinispan.transaction.RemoteTransaction;
 import org.infinispan.transaction.xa.GlobalTransaction;
 import org.infinispan.transaction.xa.recovery.RecoveryManager;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Command corresponding to the 1st phase of 2PC.
@@ -52,7 +52,7 @@ import java.util.Set;
  */
 public class PrepareCommand extends AbstractTransactionBoundaryCommand {
 
-   private static final Log log = LogFactory.getLog(PrepareCommand.class);
+   private static final ALogger log = LogFactory.getLog(PrepareCommand.class);
    private boolean trace = log.isTraceEnabled();
 
    public static final byte COMMAND_ID = 12;
@@ -98,7 +98,7 @@ public class PrepareCommand extends AbstractTransactionBoundaryCommand {
          throw new IllegalStateException("Expected null context!");
 
       if (recoveryManager != null && recoveryManager.isTransactionPrepared(globalTx)) {
-         log.tracef("The transaction %s is already prepared. Skipping prepare call.", globalTx);
+         log.trace("The transaction " + globalTx + " is already prepared. Skipping prepare call.");
          return null;
       }
 
@@ -122,7 +122,7 @@ public class PrepareCommand extends AbstractTransactionBoundaryCommand {
       RemoteTxInvocationContext ctx = icc.createRemoteTxInvocationContext(remoteTransaction, getOrigin());
 
       if (trace)
-         log.tracef("Invoking remotely originated prepare: %s with invocation context: %s", this, ctx);
+         log.trace("Invoking remotely originated prepare: " + this + " with invocation context: " + ctx);
       notifier.notifyTransactionRegistered(ctx.getGlobalTransaction(), ctx);
       return invoker.invoke(ctx, this);
    }

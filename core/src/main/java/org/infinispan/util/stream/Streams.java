@@ -23,14 +23,14 @@
 
 package org.infinispan.util.stream;
 
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * A collection of stream related utility methods.
@@ -42,7 +42,7 @@ import java.io.OutputStream;
  */
 public class Streams {
 
-   private static final Log log = LogFactory.getLog(Streams.class);
+   private static final ALogger log = LogFactory.getLog(Streams.class);
 
    /////////////////////////////////////////////////////////////////////////
    //                               Closing                               //
@@ -283,7 +283,7 @@ public class Streams {
 
       boolean trace = log.isTraceEnabled();
       if (trace) {
-         log.tracef("copying %s to %s with buffer size: %d", input, output, buffer.length);
+         log.trace("copying " + input + " to " + output + " with buffer size: " + buffer.length);
       }
 
       while ((read = input.read(buffer)) != -1) {
@@ -291,7 +291,7 @@ public class Streams {
          total += read;
 
          if (trace) {
-            log.tracef("bytes read: %d; total bytes read: %d", read, total);
+            log.trace("bytes read: " + read + "; total bytes read: " + total);
          }
       }
 
@@ -381,18 +381,18 @@ public class Streams {
       // size, then we only want to read that much
       readLength = Math.min((int) length, buffer.length);
       if (trace) {
-         log.tracef("initial read length: %d", readLength);
+         log.trace("initial read length: " + readLength);
       }
 
       while (readLength != 0 && (read = input.read(buffer, 0, readLength)) != -1) {
-         if (trace) log.tracef("read bytes: %d", read);
+         if (trace) log.trace("read bytes: " + read);
          output.write(buffer, 0, read);
          total += read;
-         if (trace) log.tracef("total bytes read: %d", total);
+         if (trace) log.trace("total bytes read: " + total);
 
          // update the readLength
          readLength = Math.min((int) (length - total), buffer.length);
-         if (trace) log.tracef("next read length: %d", readLength);
+         if (trace) log.trace("next read length: " + readLength);
       }
 
       return total;

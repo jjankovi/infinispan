@@ -22,6 +22,14 @@
  */
 package org.infinispan.transaction.xa.recovery;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.infinispan.CacheException;
 import org.infinispan.factories.annotations.Inject;
 import org.infinispan.remoting.transport.Address;
@@ -30,18 +38,10 @@ import org.infinispan.transaction.RemoteTransaction;
 import org.infinispan.transaction.xa.GlobalTransaction;
 import org.infinispan.transaction.xa.LocalXaTransaction;
 import org.infinispan.transaction.xa.XaTransactionTable;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.Transaction;
-import javax.transaction.xa.Xid;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import org.transaction.Transaction;
+import org.transaction.xa.Xid;
 
 /**
  * Transaction table that delegates prepared transaction's management to the {@link RecoveryManager}.
@@ -51,7 +51,7 @@ import java.util.Set;
  */
 public class RecoveryAwareTransactionTable extends XaTransactionTable {
 
-   private static final Log log = LogFactory.getLog(RecoveryAwareTransactionTable.class);
+   private static final ALogger log = LogFactory.getLog(RecoveryAwareTransactionTable.class);
 
    private RecoveryManagerImpl recoveryManager;
 
@@ -143,7 +143,7 @@ public class RecoveryAwareTransactionTable extends XaTransactionTable {
          throw new CacheException(String.format("Local transaction for transaction (%s) not found", tx));
 
       localTx.setCompletionFailed(true);
-      log.tracef("Marked as completion failed %s", localTx);
+      log.trace("Marked as completion failed " + localTx);
    }
 
    public Set<RecoveryAwareLocalTransaction> getLocalTxThatFailedToComplete() {
@@ -166,11 +166,11 @@ public class RecoveryAwareTransactionTable extends XaTransactionTable {
       for (RemoteTransaction rTx : getRemoteTransactions()) {
          RecoverableTransactionIdentifier gtx = (RecoverableTransactionIdentifier) rTx.getGlobalTransaction();
          if (gtx.getInternalId() == internalId) {
-            if (log.isTraceEnabled()) log.tracef("Found xid %s matching internal id %s", gtx.getXid(), internalId);
+            if (log.isTraceEnabled()) log.trace("Found xid " + gtx.getXid() + " matching internal id " + internalId);
             return gtx.getXid();
          }
       }
-      log.tracef("Could not find remote transactions matching internal id %s", internalId);
+      log.trace("Could not find remote transactions matching internal id " + internalId);
       return null;
    }
 

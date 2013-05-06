@@ -19,6 +19,12 @@
 
 package org.infinispan.interceptors;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.log4j.Logger;
 import org.infinispan.commands.AbstractVisitor;
 import org.infinispan.commands.CommandsFactory;
 import org.infinispan.commands.FlagAffectedCommand;
@@ -46,13 +52,8 @@ import org.infinispan.context.impl.TxInvocationContext;
 import org.infinispan.factories.annotations.Inject;
 import org.infinispan.interceptors.base.CommandInterceptor;
 import org.infinispan.interceptors.locking.ClusteringDependentLogic;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Interceptor in charge with wrapping entries and add them in caller's context.
@@ -68,11 +69,11 @@ public class EntryWrappingInterceptor extends CommandInterceptor {
    protected final EntryWrappingVisitor entryWrappingVisitor = new EntryWrappingVisitor();
    private CommandsFactory commandFactory;
 
-   private static final Log log = LogFactory.getLog(EntryWrappingInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(EntryWrappingInterceptor.class);
    private static final boolean trace = log.isTraceEnabled();
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 
@@ -187,16 +188,16 @@ public class EntryWrappingInterceptor extends CommandInterceptor {
       } else {
          Set<Map.Entry<Object, CacheEntry>> entries = ctx.getLookedUpEntries().entrySet();
          Iterator<Map.Entry<Object, CacheEntry>> it = entries.iterator();
-         final Log log = getLog();
+         final ALogger log = getLog();
          while (it.hasNext()) {
             Map.Entry<Object, CacheEntry> e = it.next();
             CacheEntry entry = e.getValue();
             if (!commitEntryIfNeeded(ctx, skipOwnershipCheck, entry)) {
                if (trace) {
                   if (entry==null)
-                     log.tracef("Entry for key %s is null : not calling commitUpdate", e.getKey());
+                     log.trace("Entry for key " + e.getKey() + " is null : not calling commitUpdate");
                   else
-                     log.tracef("Entry for key %s is not changed(%s): not calling commitUpdate", e.getKey(), entry);
+                     log.trace("Entry for key " + e.getKey() + " is not changed(" + entry + "): not calling commitUpdate");
                }
             }
          }
@@ -285,7 +286,7 @@ public class EntryWrappingInterceptor extends CommandInterceptor {
    private boolean commitEntryIfNeeded(InvocationContext ctx, boolean skipOwnershipCheck, CacheEntry entry) {
       if (entry != null && entry.isChanged()) {
          commitContextEntry(entry, ctx, skipOwnershipCheck);
-         log.tracef("Committed entry %s", entry);
+         log.trace("Committed entry " + entry);
          return true;
       }
       return false;

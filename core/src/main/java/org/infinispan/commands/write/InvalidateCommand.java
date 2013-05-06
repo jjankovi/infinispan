@@ -22,19 +22,18 @@
  */
 package org.infinispan.commands.write;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Set;
+
 import org.infinispan.commands.Visitor;
 import org.infinispan.context.Flag;
 import org.infinispan.context.InvocationContext;
 import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.notifications.cachelistener.CacheNotifier;
 import org.infinispan.util.Util;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Set;
-
 
 /**
  * Removes an entry from memory.
@@ -44,7 +43,7 @@ import java.util.Set;
  */
 public class InvalidateCommand extends RemoveCommand {
    public static final int COMMAND_ID = 6;
-   private static final Log log = LogFactory.getLog(InvalidateCommand.class);
+   private static final ALogger log = LogFactory.getLog(InvalidateCommand.class);
    private static final boolean trace = log.isTraceEnabled();
    protected Object[] keys;
 
@@ -75,7 +74,7 @@ public class InvalidateCommand extends RemoveCommand {
    @Override
    public Object perform(InvocationContext ctx) throws Throwable {
       if (trace) {
-         log.tracef("Invalidating keys %s", Arrays.toString(keys));
+         log.trace("Invalidating keys " + Arrays.toString(keys));
       }
       for (Object k : keys) {
          invalidate(ctx, k);

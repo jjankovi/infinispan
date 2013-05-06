@@ -22,6 +22,11 @@
  */
 package org.infinispan.commands.remote;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
+
 import org.infinispan.commands.CommandsFactory;
 import org.infinispan.commands.FlagAffectedCommand;
 import org.infinispan.commands.Visitor;
@@ -40,13 +45,8 @@ import org.infinispan.interceptors.InterceptorChain;
 import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.transaction.TransactionTable;
 import org.infinispan.transaction.xa.GlobalTransaction;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Set;
 
 /**
  * Issues a remote get call.  This is not a {@link org.infinispan.commands.VisitableCommand} and hence not passed up the
@@ -59,7 +59,7 @@ import java.util.Set;
 public class ClusteredGetCommand extends BaseRpcCommand implements FlagAffectedCommand {
 
    public static final byte COMMAND_ID = 16;
-   private static final Log log = LogFactory.getLog(ClusteredGetCommand.class);
+   private static final ALogger log = LogFactory.getLog(ClusteredGetCommand.class);
    private static final boolean trace = log.isTraceEnabled();
 
    private Object key;

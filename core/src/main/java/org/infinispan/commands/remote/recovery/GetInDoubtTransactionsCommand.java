@@ -22,13 +22,13 @@
  */
 package org.infinispan.commands.remote.recovery;
 
+import java.util.List;
+
 import org.infinispan.context.InvocationContext;
 import org.infinispan.util.Util;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.xa.Xid;
-import java.util.List;
+import org.transaction.xa.Xid;
 
 /**
  * Rpc to obtain all in-doubt prepared transactions stored on remote nodes.
@@ -39,7 +39,7 @@ import java.util.List;
  */
 public class GetInDoubtTransactionsCommand extends RecoveryCommand {
 
-   private static final Log log = LogFactory.getLog(GetInDoubtTransactionsCommand.class);
+   private static final ALogger log = LogFactory.getLog(GetInDoubtTransactionsCommand.class);
 
    public static final int COMMAND_ID = 21;
 
@@ -54,7 +54,7 @@ public class GetInDoubtTransactionsCommand extends RecoveryCommand {
    @Override
    public List<Xid> perform(InvocationContext ctx) throws Throwable {
       List<Xid> localInDoubtTransactions = recoveryManager.getInDoubtTransactions();
-      log.tracef("Returning result %s", localInDoubtTransactions);
+      log.trace("Returning result " + localInDoubtTransactions);
       return localInDoubtTransactions;
    }
 

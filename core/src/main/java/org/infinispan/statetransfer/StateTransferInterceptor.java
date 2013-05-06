@@ -23,13 +23,30 @@
 
 package org.infinispan.statetransfer;
 
+import java.util.Collections;
+import java.util.Set;
+
+import org.apache.log4j.Logger;
 import org.infinispan.commands.CommandsFactory;
 import org.infinispan.commands.FlagAffectedCommand;
 import org.infinispan.commands.TopologyAffectedCommand;
 import org.infinispan.commands.VisitableCommand;
 import org.infinispan.commands.control.LockControlCommand;
-import org.infinispan.commands.tx.*;
-import org.infinispan.commands.write.*;
+import org.infinispan.commands.tx.CommitCommand;
+import org.infinispan.commands.tx.PrepareCommand;
+import org.infinispan.commands.tx.RollbackCommand;
+import org.infinispan.commands.tx.TransactionBoundaryCommand;
+import org.infinispan.commands.tx.VersionedPrepareCommand;
+import org.infinispan.commands.write.ApplyDeltaCommand;
+import org.infinispan.commands.write.ClearCommand;
+import org.infinispan.commands.write.EvictCommand;
+import org.infinispan.commands.write.InvalidateCommand;
+import org.infinispan.commands.write.InvalidateL1Command;
+import org.infinispan.commands.write.PutKeyValueCommand;
+import org.infinispan.commands.write.PutMapCommand;
+import org.infinispan.commands.write.RemoveCommand;
+import org.infinispan.commands.write.ReplaceCommand;
+import org.infinispan.commands.write.WriteCommand;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.context.Flag;
 import org.infinispan.context.InvocationContext;
@@ -43,10 +60,8 @@ import org.infinispan.topology.CacheTopology;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.RemoteTransaction;
 import org.infinispan.transaction.WriteSkewHelper;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.*;
 
 //todo [anistor] command forwarding breaks the rule that we have only one originator for a command. this opens now the possibility to have two threads processing incoming remote commands for the same TX
 /**
@@ -57,7 +72,7 @@ import java.util.*;
  */
 public class StateTransferInterceptor extends CommandInterceptor {   //todo [anistor] this interceptor should be added to stack only if we have state transfer. maybe we need this for invalidation mode too!
 
-   private static final Log log = LogFactory.getLog(StateTransferInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(StateTransferInterceptor.class);
 
    private final AffectedKeysVisitor affectedKeysVisitor = new AffectedKeysVisitor();
 
@@ -74,7 +89,7 @@ public class StateTransferInterceptor extends CommandInterceptor {   //todo [ani
    private boolean useVersioning;
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 
@@ -258,7 +273,7 @@ public class StateTransferInterceptor extends CommandInterceptor {   //todo [ani
                if (!newTargets.isEmpty()) {
                   // Update the topology id to prevent cycles
                   command.setTopologyId(localTopologyId);
-                  log.tracef("Forwarding command %s to new targets %s", command, newTargets);
+                  log.trace("Forwarding command " + command + " to new targets " + newTargets);
                   // TODO find a way to forward the command async if it was received async
                   rpcManager.invokeRemotely(newTargets, command, true, false);
                }

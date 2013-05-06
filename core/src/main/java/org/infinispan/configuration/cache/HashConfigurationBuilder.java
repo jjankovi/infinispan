@@ -22,7 +22,7 @@ import org.infinispan.commons.hash.Hash;
 import org.infinispan.commons.hash.MurmurHash3;
 import org.infinispan.distribution.ch.ConsistentHash;
 import org.infinispan.distribution.ch.ConsistentHashFactory;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -32,7 +32,7 @@ import org.infinispan.util.logging.LogFactory;
  *
  */
 public class HashConfigurationBuilder extends AbstractClusteringConfigurationChildBuilder<HashConfiguration> {
-   private static final Log log = LogFactory.getLog(HashConfigurationBuilder.class);
+   private static final ALogger log = LogFactory.getLog(HashConfigurationBuilder.class);
 
    private ConsistentHashFactory consistentHashFactory;
    private Hash hash = new MurmurHash3();
@@ -53,7 +53,8 @@ public class HashConfigurationBuilder extends AbstractClusteringConfigurationChi
     */
    @Deprecated
    public HashConfigurationBuilder consistentHash(ConsistentHash consistentHash) {
-      log.consistentHashDeprecated();
+      log.warn("hash's 'consistentHash' attribute has been deprecated. Please use " +
+      		"hash.consistentHashFactory instead");
       return this;
    }
 
@@ -80,7 +81,8 @@ public class HashConfigurationBuilder extends AbstractClusteringConfigurationChi
     */
    @Deprecated
    public HashConfigurationBuilder numVirtualNodes(int numVirtualNodes) {
-      log.hashNumVirtualNodesDeprecated();
+      log.warn("hash's 'numVirtualNodes' attribute has been deprecated. " +
+      		"Please use hash.numSegments instead");
       return this;
    }
 

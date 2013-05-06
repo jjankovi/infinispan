@@ -22,6 +22,10 @@
  */
 package org.infinispan.interceptors;
 
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.infinispan.commands.read.GetKeyValueCommand;
 import org.infinispan.commands.write.EvictCommand;
 import org.infinispan.commands.write.PutKeyValueCommand;
@@ -34,17 +38,13 @@ import org.infinispan.interceptors.base.JmxStatsCommandInterceptor;
 import org.infinispan.jmx.annotations.MBean;
 import org.infinispan.jmx.annotations.ManagedAttribute;
 import org.infinispan.jmx.annotations.ManagedOperation;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 import org.rhq.helpers.pluginAnnotations.agent.DisplayType;
 import org.rhq.helpers.pluginAnnotations.agent.MeasurementType;
 import org.rhq.helpers.pluginAnnotations.agent.Metric;
 import org.rhq.helpers.pluginAnnotations.agent.Operation;
 import org.rhq.helpers.pluginAnnotations.agent.Units;
-
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Captures cache management statistics
@@ -68,10 +68,10 @@ public class CacheMgmtInterceptor extends JmxStatsCommandInterceptor {
 
    private DataContainer dataContainer;
 
-   private static final Log log = LogFactory.getLog(CacheMgmtInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(CacheMgmtInterceptor.class);
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 

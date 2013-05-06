@@ -22,6 +22,11 @@
  */
 package org.infinispan.factories;
 
+import static java.util.Collections.emptyMap;
+import static org.infinispan.factories.KnownComponentNames.MODULE_COMMAND_INITIALIZERS;
+
+import java.util.Map;
+
 import org.infinispan.AdvancedCache;
 import org.infinispan.CacheException;
 import org.infinispan.commands.CommandsFactory;
@@ -37,13 +42,8 @@ import org.infinispan.marshall.StreamingMarshaller;
 import org.infinispan.notifications.cachemanagerlistener.CacheManagerNotifier;
 import org.infinispan.remoting.responses.ResponseGenerator;
 import org.infinispan.statetransfer.StateTransferManager;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.Map;
-
-import static java.util.Collections.emptyMap;
-import static org.infinispan.factories.KnownComponentNames.MODULE_COMMAND_INITIALIZERS;
 
 /**
  * Named cache specific components
@@ -55,7 +55,7 @@ public final class ComponentRegistry extends AbstractComponentRegistry {
 
    private final GlobalComponentRegistry globalComponents;
    private final String cacheName;
-   private static final Log log = LogFactory.getLog(ComponentRegistry.class);
+   private static final ALogger log = LogFactory.getLog(ComponentRegistry.class);
    private CacheManagerNotifier cacheManagerNotifier;
 
    //Cached fields:
@@ -106,7 +106,7 @@ public final class ComponentRegistry extends AbstractComponentRegistry {
    }
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 
@@ -134,10 +134,10 @@ public final class ComponentRegistry extends AbstractComponentRegistry {
    @Override
    protected final Component lookupComponent(String componentClassName, String name, boolean nameIsFQCN) {
       if (isGlobal(nameIsFQCN ? name : componentClassName)) {
-         log.tracef("Looking up global component %s", componentClassName);
+         log.trace("Looking up global component " + componentClassName);
          return globalComponents.lookupComponent(componentClassName, name, nameIsFQCN);
       } else {
-         log.tracef("Looking up local component %s", componentClassName);
+         log.trace("Looking up local component " + componentClassName);
          return lookupLocalComponent(componentClassName, name, nameIsFQCN);
       }
    }
@@ -153,10 +153,10 @@ public final class ComponentRegistry extends AbstractComponentRegistry {
    @Override
    protected final <T> T getOrCreateComponent(Class<T> componentClass, String name, boolean nameIsFQCN) {
       if (isGlobal(nameIsFQCN ? name : componentClass.getName())) {
-         log.tracef("Get or create global component %s", componentClass);
+         log.trace("Get or create global component " + componentClass);
          return globalComponents.getOrCreateComponent(componentClass, name, nameIsFQCN);
       } else {
-         log.tracef("Get or create local component %s", componentClass);
+         log.trace("Get or create local component " + componentClass);
          return super.getOrCreateComponent(componentClass, name, nameIsFQCN);
       }
    }

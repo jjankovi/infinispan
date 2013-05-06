@@ -22,15 +22,15 @@
  */
 package org.infinispan.commands.read;
 
+import java.util.Set;
+
 import org.infinispan.commands.Visitor;
 import org.infinispan.container.entries.CacheEntry;
 import org.infinispan.context.Flag;
 import org.infinispan.context.InvocationContext;
 import org.infinispan.notifications.cachelistener.CacheNotifier;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.Set;
 
 /**
  * Implements functionality defined by {@link org.infinispan.Cache#get(Object)} and
@@ -41,7 +41,7 @@ import java.util.Set;
  */
 public class GetKeyValueCommand extends AbstractDataCommand {
    public static final byte COMMAND_ID = 4;
-   private static final Log log = LogFactory.getLog(GetKeyValueCommand.class);
+   private static final ALogger log = LogFactory.getLog(GetKeyValueCommand.class);
    private static final boolean trace = log.isTraceEnabled();
    private CacheNotifier notifier;
    private boolean returnCacheEntry;
@@ -78,7 +78,7 @@ public class GetKeyValueCommand extends AbstractDataCommand {
       }
       if (entry.isRemoved()) {
          if (trace) {
-            log.tracef("Entry has been deleted and is of type %s", entry.getClass().getSimpleName());
+            log.trace("Entry has been deleted and is of type " + entry.getClass().getSimpleName());
          }
          return null;
       }
@@ -87,7 +87,7 @@ public class GetKeyValueCommand extends AbstractDataCommand {
       notifier.notifyCacheEntryVisited(key, value, true, ctx);
       final Object result = returnCacheEntry ? entry : value;
       if (trace) {
-         log.tracef("Found value %s", result);
+         log.trace("Found value " + result);
       }
       notifier.notifyCacheEntryVisited(key, value, false, ctx);
       return result;

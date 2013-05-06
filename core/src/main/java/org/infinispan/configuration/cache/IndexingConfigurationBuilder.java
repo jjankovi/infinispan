@@ -23,7 +23,7 @@ import java.util.Properties;
 
 import org.infinispan.util.TypedProperties;
 import org.infinispan.util.Util;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -31,7 +31,7 @@ import org.infinispan.util.logging.LogFactory;
  */
 public class IndexingConfigurationBuilder extends AbstractConfigurationChildBuilder<IndexingConfiguration>{
 
-   private static final Log log = LogFactory.getLog(IndexingConfigurationBuilder.class);
+   private static final ALogger log = LogFactory.getLog(IndexingConfigurationBuilder.class);
 
    private boolean enabled = false;
    private boolean indexLocalOnly = false;
@@ -153,7 +153,8 @@ public class IndexingConfigurationBuilder extends AbstractConfigurationChildBuil
          try {
             Util.loadClassStrict("org.infinispan.query.Search", getBuilder().classLoader());
          } catch (ClassNotFoundException e) {
-            log.warnf("Indexing can only be enabled if infinispan-query.jar is available on your classpath, and this jar has not been detected. Intended behavior may not be exhibited.");
+            log.warn("Indexing can only be enabled if infinispan-query.jar is available on your " +
+            		"classpath, and this jar has not been detected. Intended behavior may not be exhibited.");
          }
       }
    }

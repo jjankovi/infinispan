@@ -22,6 +22,19 @@
  */
 package org.infinispan.manager;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import org.infinispan.Cache;
 import org.infinispan.CacheException;
 import org.infinispan.Version;
@@ -41,8 +54,6 @@ import org.infinispan.factories.InternalCacheFactory;
 import org.infinispan.factories.annotations.SurvivesRestarts;
 import org.infinispan.factories.scopes.Scope;
 import org.infinispan.factories.scopes.Scopes;
-import org.infinispan.jmx.CacheJmxRegistration;
-import org.infinispan.jmx.CacheManagerJmxRegistration;
 import org.infinispan.jmx.annotations.MBean;
 import org.infinispan.jmx.annotations.ManagedAttribute;
 import org.infinispan.jmx.annotations.ManagedOperation;
@@ -56,26 +67,13 @@ import org.infinispan.remoting.transport.Transport;
 import org.infinispan.util.FileLookupFactory;
 import org.infinispan.util.Immutables;
 import org.infinispan.util.concurrent.ConcurrentMapFactory;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 import org.rhq.helpers.pluginAnnotations.agent.DataType;
 import org.rhq.helpers.pluginAnnotations.agent.DisplayType;
 import org.rhq.helpers.pluginAnnotations.agent.Metric;
 import org.rhq.helpers.pluginAnnotations.agent.Operation;
 import org.rhq.helpers.pluginAnnotations.agent.Parameter;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A <tt>CacheManager</tt> is the primary mechanism for retrieving a {@link Cache} instance, and is often used as a
@@ -125,7 +123,7 @@ import java.util.concurrent.TimeUnit;
 @MBean(objectName = DefaultCacheManager.OBJECT_NAME, description = "Component that acts as a manager, factory and container for caches in the system.")
 public class DefaultCacheManager implements EmbeddedCacheManager, CacheManager {
    public static final String OBJECT_NAME = "CacheManager";
-   private static final Log log = LogFactory.getLog(DefaultCacheManager.class);
+   private static final ALogger log = LogFactory.getLog(DefaultCacheManager.class);
    protected final GlobalConfiguration globalConfiguration;
    protected final Configuration defaultConfiguration;
    private final ConcurrentMap<String, CacheWrapper> caches = ConcurrentMapFactory.makeConcurrentMap();
@@ -680,7 +678,7 @@ public class DefaultCacheManager implements EmbeddedCacheManager, CacheManager {
       globalComponentRegistry.start();
       Configuration c = getConfiguration(cacheName);
 
-      log.tracef("About to wire and start cache %s", cacheName);
+      log.trace("About to wire and start cache " + cacheName);
       Cache<K, V> cache = new InternalCacheFactory<K, V>().createCache(c, globalComponentRegistry, cacheName);
       cacheWrapper.setCache(cache);
 
@@ -705,10 +703,10 @@ public class DefaultCacheManager implements EmbeddedCacheManager, CacheManager {
 
    @Override
    public void start() {
-      globalComponentRegistry.getComponent(CacheManagerJmxRegistration.class).start();
+//      globalComponentRegistry.getComponent(CacheManagerJmxRegistration.class).start();
       String clusterName = globalConfiguration.transport().clusterName();
       String nodeName = globalConfiguration.transport().nodeName();
-      log.debugf("Started cache manager %s on %s", clusterName, nodeName);
+      log.debug("Started cache manager " + clusterName + " on " + nodeName);
    }
 
    @Override
@@ -718,7 +716,7 @@ public class DefaultCacheManager implements EmbeddedCacheManager, CacheManager {
             // DCL to make sure that only one thread calls stop at one time,
             // and any other calls by other threads are ignored.
             if (!stopping) {
-               log.debugf("Stopping cache manager %s on %s", globalConfiguration.transport().clusterName(), getAddress());
+               log.debug("Stopping cache manager " + globalConfiguration.transport().clusterName() + " on " +  getAddress());
                stopping = true;
                // make sure we stop the default cache LAST!
                Cache<?, ?> defaultCache = null;
@@ -738,7 +736,7 @@ public class DefaultCacheManager implements EmbeddedCacheManager, CacheManager {
                   unregisterCacheMBean(defaultCache);
                   defaultCache.stop();
                }
-               globalComponentRegistry.getComponent(CacheManagerJmxRegistration.class).stop();
+//               globalComponentRegistry.getComponent(CacheManagerJmxRegistration.class).stop();
                globalComponentRegistry.stop();
 
             } else {
@@ -752,8 +750,8 @@ public class DefaultCacheManager implements EmbeddedCacheManager, CacheManager {
 
    private void unregisterCacheMBean(Cache<?, ?> cache) {
       // Unregister cache mbean regardless of jmx statistics setting
-      cache.getAdvancedCache().getComponentRegistry().getComponent(CacheJmxRegistration.class)
-              .unregisterCacheMBean();
+//      cache.getAdvancedCache().getComponentRegistry().getComponent(CacheJmxRegistration.class)
+//              .unregisterCacheMBean();
    }
 
    @Override

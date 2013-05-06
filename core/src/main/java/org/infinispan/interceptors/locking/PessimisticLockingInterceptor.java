@@ -23,6 +23,10 @@
 
 package org.infinispan.interceptors.locking;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.infinispan.commands.CommandsFactory;
 import org.infinispan.commands.FlagAffectedCommand;
 import org.infinispan.commands.control.LockControlCommand;
@@ -42,12 +46,8 @@ import org.infinispan.context.InvocationContext;
 import org.infinispan.context.impl.TxInvocationContext;
 import org.infinispan.factories.annotations.Inject;
 import org.infinispan.transaction.LocalTransaction;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Locking interceptor to be used by pessimistic caches.
@@ -69,10 +69,10 @@ public class PessimisticLockingInterceptor extends AbstractTxLockingInterceptor 
 
    private CommandsFactory cf;
 
-   private static final Log log = LogFactory.getLog(PessimisticLockingInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(PessimisticLockingInterceptor.class);
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 
@@ -230,7 +230,7 @@ public class PessimisticLockingInterceptor extends AbstractTxLockingInterceptor 
                invokeNextInterceptor(ctx, command);
                ctx.addAllAffectedKeys(command.getKeys());
             } else {
-               log.tracef("Already own locks on keys: %s, skipping remote call", command.getKeys());
+               log.trace("Already own locks on keys: " + command.getKeys() + ", skipping remote call");
             }
          }
       }
@@ -261,7 +261,7 @@ public class PessimisticLockingInterceptor extends AbstractTxLockingInterceptor 
          final TxInvocationContext txContext = (TxInvocationContext) ctx;
          LocalTransaction localTransaction = (LocalTransaction) txContext.getCacheTransaction();
          if (localTransaction.getAffectedKeys().containsAll(keys)) {
-            log.tracef("We already have lock for keys %s, skip remote lock acquisition", keys);
+            log.trace("We already have lock for keys " + keys + ", skip remote lock acquisition");
             return;
          } else {
             LockControlCommand lcc = cf.buildLockControlCommand(keys,
@@ -279,7 +279,7 @@ public class PessimisticLockingInterceptor extends AbstractTxLockingInterceptor 
          LocalTransaction localTransaction = (LocalTransaction) txContext.getCacheTransaction();
          final boolean alreadyLocked = localTransaction.getAffectedKeys().contains(key);
          if (alreadyLocked) {
-            log.tracef("We already have lock for key %s, skip remote lock acquisition", key);
+            log.trace("We already have lock for key " + key + ", skip remote lock acquisition");
             return;
          } else {
             LockControlCommand lcc = cf.buildLockControlCommand(

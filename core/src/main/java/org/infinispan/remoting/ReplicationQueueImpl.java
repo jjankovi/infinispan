@@ -22,6 +22,14 @@
  */
 package org.infinispan.remoting;
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 import org.infinispan.Cache;
 import org.infinispan.commands.CommandsFactory;
 import org.infinispan.commands.ReplicableCommand;
@@ -35,16 +43,8 @@ import org.infinispan.factories.annotations.Start;
 import org.infinispan.factories.annotations.Stop;
 import org.infinispan.remoting.rpc.ResponseMode;
 import org.infinispan.remoting.rpc.RpcManager;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A default implementation of the ReplicationQueue interface.
@@ -53,7 +53,7 @@ import java.util.concurrent.TimeUnit;
  * @version 4.2
  */
 public class ReplicationQueueImpl implements ReplicationQueue {
-   private static final Log log = LogFactory.getLog(ReplicationQueue.class);
+   private static final ALogger log = LogFactory.getLog(ReplicationQueue.class);
 
    /**
     * Max elements before we flush
@@ -111,7 +111,7 @@ public class ReplicationQueueImpl implements ReplicationQueue {
       long interval = asyncCfg.replQueueInterval();
       trace = log.isTraceEnabled();
       if (trace)
-         log.tracef("Starting replication queue, with interval %d and maxElements %s", interval, maxElements);
+         log.trace("Starting replication queue, with interval " + interval + " and maxElements " + maxElements);
 
       this.maxElements = asyncCfg.replQueueMaxElements();
       // check again
@@ -142,7 +142,7 @@ public class ReplicationQueueImpl implements ReplicationQueue {
       try {
          flush();
       } catch (Exception e) {
-         log.debug("Unable to perform final flush before shutting down", e);
+//         log.debug("Unable to perform final flush before shutting down", e);
       }
       scheduledExecutor = null;
    }
@@ -162,19 +162,19 @@ public class ReplicationQueueImpl implements ReplicationQueue {
    @Override
    public synchronized int flush() {
       List<ReplicableCommand> toReplicate = drainReplQueue();
-      if (trace) log.tracef("flush(): flushing repl queue (num elements=%s)", toReplicate.size());
+      if (trace) log.trace("flush(): flushing repl queue (num elements=" + toReplicate.size() + ")");
 
       int toReplicateSize = toReplicate.size();
       if (toReplicateSize > 0) {
          try {
-            log.tracef("Flushing %s elements", toReplicateSize);
+            log.trace("Flushing " + toReplicateSize + " elements");
             MultipleRpcCommand multipleRpcCommand = commandsFactory.buildReplicateCommand(toReplicate);
             // send to all live caches in the cluster
             rpcManager.invokeRemotely(null, multipleRpcCommand,
                   ResponseMode.getAsyncResponseMode(configuration),
                   configuration.clustering().sync().replTimeout());
          } catch (Throwable t) {
-            log.failedReplicatingQueue(toReplicate.size(), t);
+            log.error("Failed replicating " + toReplicate.size() + " elements in replication queue", t);
          }
       }
 

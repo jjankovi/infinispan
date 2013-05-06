@@ -22,6 +22,8 @@
  */
 package org.infinispan.transaction.xa;
 
+
+
 import org.infinispan.commands.CommandsFactory;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.interceptors.locking.ClusteringDependentLogic;
@@ -31,12 +33,11 @@ import org.infinispan.transaction.TransactionCoordinator;
 import org.infinispan.transaction.TransactionTable;
 import org.infinispan.transaction.xa.recovery.RecoveryManager;
 import org.infinispan.transaction.xa.recovery.SerializableXid;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.xa.XAException;
-import javax.transaction.xa.XAResource;
-import javax.transaction.xa.Xid;
+import org.transaction.xa.XAException;
+import org.transaction.xa.XAResource;
+import org.transaction.xa.Xid;
 
 /**
  * This acts both as an local {@link org.infinispan.transaction.xa.CacheTransaction} and implementor of an {@link
@@ -47,7 +48,7 @@ import javax.transaction.xa.Xid;
  */
 public class TransactionXaAdapter extends AbstractEnlistmentAdapter implements XAResource {
 
-   private static final Log log = LogFactory.getLog(TransactionXaAdapter.class);
+   private static final ALogger log = LogFactory.getLog(TransactionXaAdapter.class);
    private static boolean trace = log.isTraceEnabled();
 
    /**
@@ -147,18 +148,18 @@ public class TransactionXaAdapter extends AbstractEnlistmentAdapter implements X
       //transform in our internal format in order to be able to serialize
       localTransaction.setXid(xid);
       txTable.addLocalTransactionMapping(localTransaction);
-      if (trace) log.tracef("start called on tx %s", this.localTransaction.getGlobalTransaction());
+      if (trace) log.trace("start called on tx " + this.localTransaction.getGlobalTransaction());
    }
 
    @Override
    public void end(Xid externalXid, int i) throws XAException {
-      if (trace) log.tracef("end called on tx %s(%s)", this.localTransaction.getGlobalTransaction(), cacheName);
+      if (trace) log.trace("end called on tx " + this.localTransaction.getGlobalTransaction() + "(" + cacheName + ")");
    }
 
    @Override
    public void forget(Xid externalXid) throws XAException {
       Xid xid = convertXid(externalXid);
-      if (trace) log.tracef("forget called for xid %s", xid);
+      if (trace) log.trace("forget called for xid " + xid);
       try {
          recoveryManager.removeRecoveryInformationFromCluster(null, xid, true, null);
       } catch (Exception e) {
@@ -190,14 +191,15 @@ public class TransactionXaAdapter extends AbstractEnlistmentAdapter implements X
    @Override
    public Xid[] recover(int flag) throws XAException {
       if (!recoveryEnabled) {
-         log.recoveryIgnored();
+         log.warn("Recovery call will be ignored as recovery is disabled. " +
+         "More on recovery: http://community.jboss.org/docs/DOC-16646");
          return RecoveryManager.RecoveryIterator.NOTHING;
       }
       if (trace) log.trace("recover called: " + flag);
 
       if (isFlag(flag, TMSTARTRSCAN)) {
          recoveryIterator = recoveryManager.getPreparedTransactionsFromCluster();
-         if (trace) log.tracef("Fetched a new recovery iterator: %s" , recoveryIterator);
+         if (trace) log.trace("Fetched a new recovery iterator: " + recoveryIterator);
       }
       if (isFlag(flag, TMENDRSCAN)) {
          if (trace) log.trace("Flushing the iterator");
@@ -245,7 +247,7 @@ public class TransactionXaAdapter extends AbstractEnlistmentAdapter implements X
    private static LocalXaTransaction getLocalTransactionAndValidateImpl(Xid xid, XaTransactionTable txTable) throws XAException {
       LocalXaTransaction localTransaction = txTable.getLocalTransaction(xid);
       if  (localTransaction == null) {
-         if (trace) log.tracef("no tx found for %s", xid);
+         if (trace) log.trace("no tx found for " + xid);
          throw new XAException(XAException.XAER_NOTA);
       }
       return localTransaction;

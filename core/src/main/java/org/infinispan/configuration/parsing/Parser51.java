@@ -25,19 +25,16 @@ import static org.infinispan.configuration.cache.CacheMode.INVALIDATION_SYNC;
 import static org.infinispan.configuration.cache.CacheMode.LOCAL;
 import static org.infinispan.configuration.cache.CacheMode.REPL_ASYNC;
 import static org.infinispan.configuration.cache.CacheMode.REPL_SYNC;
+import static org.infinispan.util.StringPropertyReplacer.replaceProperties;
 
 import java.util.Properties;
 
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-
 import org.infinispan.config.ConfigurationException;
+import org.infinispan.configuration.cache.ClusterCacheLoaderConfigurationBuilder;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.FileCacheStoreConfigurationBuilder;
 import org.infinispan.configuration.cache.IndexingConfigurationBuilder;
 import org.infinispan.configuration.cache.InterceptorConfiguration.Position;
-import org.infinispan.configuration.cache.ClusterCacheLoaderConfigurationBuilder;
 import org.infinispan.configuration.cache.InterceptorConfigurationBuilder;
 import org.infinispan.configuration.cache.LegacyLoaderConfigurationBuilder;
 import org.infinispan.configuration.cache.LegacyStoreConfigurationBuilder;
@@ -68,11 +65,12 @@ import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.TransactionManagerLookup;
 import org.infinispan.util.Util;
 import org.infinispan.util.concurrent.IsolationLevel;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-
-import static org.infinispan.util.StringPropertyReplacer.replaceProperties;
+import org.xml.stream.XMLStreamConstants;
+import org.xml.stream.XMLStreamException;
+import org.xml.stream.XMLStreamReader;
 
 /**
  * This class implements the parser for 5.1 schema files
@@ -83,7 +81,7 @@ import static org.infinispan.util.StringPropertyReplacer.replaceProperties;
  */
 public class Parser51 implements ConfigurationParser<ConfigurationBuilderHolder> {
 
-   private static final Log log = LogFactory.getLog(Parser51.class);
+   private static final ALogger log = LogFactory.getLog(Parser51.class);
 
    private static final Namespace NAMESPACES[] = {
       new Namespace(Namespace.INFINISPAN_NS_BASE_URI, Element.ROOT.getLocalName(), 5, 0),
@@ -714,7 +712,9 @@ public class Parser51 implements ConfigurationParser<ConfigurationBuilderHolder>
                break;
             case WAKE_UP_INTERVAL:
                final Long wakeUpInterval = Long.valueOf(value);
-               log.evictionWakeUpIntervalDeprecated(wakeUpInterval);
+               log.warn("The 'wakeUpInterval' attribute of the 'eviction' configuration XML " +
+               		"element is deprecated. Setting the 'wakeUpInterval' attribute of the 'expiration' " +
+               		"configuration XML element to " + wakeUpInterval + " instead");
                builder.expiration().wakeUpInterval(wakeUpInterval);
                break;
             default:
@@ -941,28 +941,31 @@ public class Parser51 implements ConfigurationParser<ConfigurationBuilderHolder>
          ParseUtils.requireNoNamespaceAttribute(reader, i);
          String value = replaceProperties(reader.getAttributeValue(i));
          Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-         log.stateRetrievalConfigurationDeprecated();
+         log.info("The stateRetrieval configuration element has been deprecated, " +
+         "we're assuming you meant stateTransfer. Please see XML schema for more information.");
          switch (attribute) {
             case ALWAYS_PROVIDE_IN_MEMORY_STATE:
-               log.alwaysProvideInMemoryStateDeprecated();
+               log.warn("stateRetrieval's 'alwaysProvideInMemoryState' attribute is no longer in use, " +
+            		   "instead please make sure all instances of this named cache in the cluster have " +
+            		   "'fetchInMemoryState' attribute enabled");
                break;
             case FETCH_IN_MEMORY_STATE:
                builder.clustering().stateTransfer().fetchInMemoryState(Boolean.parseBoolean(value));
                break;
             case INITIAL_RETRY_WAIT_TIME:
-               log.initialRetryWaitTimeDeprecated();
+               log.warn("stateRetrieval's 'initialRetryWaitTime' attribute is no longer in use.");
                break;
             case LOG_FLUSH_TIMEOUT:
-               log.logFlushTimeoutDeprecated();
+               log.warn("stateRetrieval's 'logFlushTimeout' attribute is no longer in use.");
                break;
             case MAX_NON_PROGRESSING_LOG_WRITES:
-               log.maxProgressingLogWritesDeprecated();
+               log.warn("stateRetrieval's 'maxProgressingLogWrites' attribute is no longer in use.");
                break;
             case NUM_RETRIES:
-               log.numRetriesDeprecated();
+               log.warn("stateRetrieval's 'numRetries' attribute is no longer in use.");
                break;
             case RETRY_WAIT_TIME_INCREASE_FACTOR:
-               log.retryWaitTimeIncreaseFactorDeprecated();
+               log.warn("stateRetrieval's 'retryWaitTimeIncreaseFactor' attribute is no longer in use.");
                break;
             case TIMEOUT:
                builder.clustering().stateTransfer().timeout(Long.parseLong(value));
@@ -1055,15 +1058,16 @@ public class Parser51 implements ConfigurationParser<ConfigurationBuilderHolder>
                builder.clustering().hash().numVirtualNodes(Integer.parseInt(value));
                break;
             case REHASH_ENABLED:
-               log.hashRehashEnabledDeprecated();
+               log.info("hash's 'rehashEnabled' attribute has been deprecated. Please use stateTransfer." +
+               		"fetchInMemoryState instead");
                builder.clustering().stateTransfer().fetchInMemoryState(Boolean.parseBoolean(value));
                break;
             case REHASH_RPC_TIMEOUT:
-               log.hashRehashRpcTimeoutDeprecated();
+               log.info("hash's 'rehashRpcTimeout' attribute has been deprecated. Please use stateTransfer.timeout instead");
                builder.clustering().stateTransfer().timeout(Long.parseLong(value));
                break;
             case REHASH_WAIT:
-               log.hashRehashWaitDeprecated();
+               log.info("hash's 'rehashWait' attribute has been deprecated. Please use stateTransfer.timeout instead");
                builder.clustering().stateTransfer().timeout(Long.parseLong(value));
                break;
             default:

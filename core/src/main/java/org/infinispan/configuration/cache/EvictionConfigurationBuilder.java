@@ -21,7 +21,7 @@ package org.infinispan.configuration.cache;
 import org.infinispan.config.ConfigurationException;
 import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.eviction.EvictionThreadPolicy;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -29,7 +29,7 @@ import org.infinispan.util.logging.LogFactory;
  */
 public class EvictionConfigurationBuilder extends AbstractConfigurationChildBuilder<EvictionConfiguration> {
 
-   private static final Log log = LogFactory.getLog(EvictionConfigurationBuilder.class);
+   private static final ALogger log = LogFactory.getLog(EvictionConfigurationBuilder.class);
 
    private int maxEntries = -1;
    private EvictionStrategy strategy = EvictionStrategy.NONE;
@@ -76,14 +76,15 @@ public class EvictionConfigurationBuilder extends AbstractConfigurationChildBuil
    @Override
    public void validate() {
       if (!strategy.isEnabled() && getBuilder().loaders().passivation())
-         log.passivationWithoutEviction();
+         log.info("Passivation configured without an eviction policy being selected. " +
+      "Only manually evicted entities will be passivated.");
       if(strategy == EvictionStrategy.FIFO)
          log.warn("FIFO strategy is deprecated, LRU will be used instead");
       if (strategy.isEnabled() && maxEntries <= 0)
          throw new ConfigurationException("Eviction maxEntries value cannot be less than or equal to zero if eviction is enabled");
       if (maxEntries > 0 && !strategy.isEnabled()) {
          strategy = EvictionStrategy.LIRS;
-         log.debugf("Max entries configured (%d) without eviction strategy. Eviction strategy overriden to %s", maxEntries, strategy);
+         log.debug("Max entries configured (" + maxEntries + ") without eviction strategy. Eviction strategy overriden to " + strategy);
       }
    }
 

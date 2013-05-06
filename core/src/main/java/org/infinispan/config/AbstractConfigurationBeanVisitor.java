@@ -46,7 +46,7 @@ import org.infinispan.config.GlobalConfiguration.TransportType;
 import org.infinispan.loaders.CacheLoaderConfig;
 import org.infinispan.loaders.decorators.AsyncStoreConfig;
 import org.infinispan.loaders.decorators.SingletonStoreConfig;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -71,7 +71,7 @@ import org.infinispan.util.logging.LogFactory;
  */
 public abstract class AbstractConfigurationBeanVisitor implements ConfigurationBeanVisitor {
 
-   private static final Log log = LogFactory.getLog(AbstractConfigurationBeanVisitor.class);
+   private static final ALogger log = LogFactory.getLog(AbstractConfigurationBeanVisitor.class);
 
    @Override
    public void visitInfinispanConfiguration(InfinispanConfiguration bean) {

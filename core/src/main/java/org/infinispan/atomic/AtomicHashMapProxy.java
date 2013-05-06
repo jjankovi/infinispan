@@ -22,6 +22,11 @@
  */
 package org.infinispan.atomic;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+
 import org.infinispan.AdvancedCache;
 import org.infinispan.batch.AutoBatchSupport;
 import org.infinispan.container.entries.CacheEntry;
@@ -30,16 +35,11 @@ import org.infinispan.context.FlagContainer;
 import org.infinispan.marshall.MarshalledValue;
 import org.infinispan.transaction.LocalTransaction;
 import org.infinispan.transaction.TransactionTable;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import org.transaction.SystemException;
+import org.transaction.Transaction;
+import org.transaction.TransactionManager;
 
 
 /**
@@ -61,7 +61,7 @@ import java.util.Set;
  * @since 4.0
  */
 public class AtomicHashMapProxy<K, V> extends AutoBatchSupport implements AtomicMap<K, V> {
-   private static final Log log = LogFactory.getLog(AtomicHashMapProxy.class);
+   private static final ALogger log = LogFactory.getLog(AtomicHashMapProxy.class);
    private static final boolean trace = log.isTraceEnabled();
    protected final Object deltaMapKey;
    protected final AdvancedCache<Object, AtomicMap<K, V>> cache;

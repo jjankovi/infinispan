@@ -23,8 +23,10 @@
 
 package org.infinispan.commands.remote.recovery;
 
+
+
 import org.infinispan.context.InvocationContext;
-import javax.transaction.xa.Xid;
+import org.transaction.xa.Xid;
 
 /**
  * Command used by the recovery tooling for forcing transaction completion .

@@ -20,11 +20,16 @@
 package org.infinispan.distribution.ch;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import org.infinispan.commons.hash.Hash;
 import org.infinispan.remoting.transport.Address;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -36,7 +41,7 @@ import org.infinispan.util.logging.LogFactory;
  */
 public class DefaultConsistentHashFactory implements ConsistentHashFactory<DefaultConsistentHash>, Serializable {
 
-   private static final Log log = LogFactory.getLog(DefaultConsistentHashFactory.class);
+   private static final ALogger log = LogFactory.getLog(DefaultConsistentHashFactory.class);
 
    @Override
    public DefaultConsistentHash create(Hash hashFunction, int numOwners, int numSegments, List<Address> members) {

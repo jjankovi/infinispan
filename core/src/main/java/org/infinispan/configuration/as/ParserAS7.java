@@ -24,9 +24,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.EnumSet;
 
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-
 import org.infinispan.configuration.cache.AsyncStoreConfigurationBuilder;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
@@ -41,6 +38,8 @@ import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.util.concurrent.IsolationLevel;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
+import org.xml.stream.XMLStreamConstants;
+import org.xml.stream.XMLStreamException;
 
 /**
  * This class implements the parser for AS7/EAP/JDG schema files

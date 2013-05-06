@@ -22,6 +22,12 @@
  */
 package org.infinispan.interceptors;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
+
 import org.infinispan.CacheException;
 import org.infinispan.commands.VisitableCommand;
 import org.infinispan.config.ConfigurationException;
@@ -34,14 +40,8 @@ import org.infinispan.factories.scopes.Scope;
 import org.infinispan.factories.scopes.Scopes;
 import org.infinispan.interceptors.base.CommandInterceptor;
 import org.infinispan.util.ReflectionUtil;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Knows how to build and manage an chain of interceptors. Also in charge with invoking methods on the chain.
@@ -53,7 +53,7 @@ import java.util.concurrent.locks.ReentrantLock;
 @Scope(Scopes.NAMED_CACHE)
 public class InterceptorChain {
 
-   private static final Log log = LogFactory.getLog(InterceptorChain.class);
+   private static final ALogger log = LogFactory.getLog(InterceptorChain.class);
 
    /**
     * reference to the first interceptor in the chain
@@ -74,8 +74,8 @@ public class InterceptorChain {
    @Start
    private void printChainInfo() {
       if (log.isDebugEnabled()) {
-         log.debugf("Interceptor chain size: %d", size());
-         log.debugf("Interceptor chain is: %s", toString());
+         log.debug("Interceptor chain size: " + size());
+         log.debug("Interceptor chain is: " + toString());
       }
    }
 
@@ -84,7 +84,10 @@ public class InterceptorChain {
             !ReflectionUtil.getAllMethodsShallow(i, Start.class).isEmpty() ||
             !ReflectionUtil.getAllMethodsShallow(i, Stop.class).isEmpty()) &&
             componentMetadataRepo.findComponentMetadata(i.getName()) == null) {
-         log.customInterceptorExpectsInjection(i.getName());
+         log.error("Custom interceptor " + i.getName() + " has used @Inject, @Start or @Stop. These methods will not be processed.  " +
+         		"Please extend org.infinispan.interceptors.base.BaseCustomInterceptor instead, and your custom " +
+         		"interceptor will have access to a cache and cacheManager.  " +
+         		"Override stop() and start() for lifecycle methods.");
       }      
    }
    

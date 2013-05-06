@@ -22,6 +22,12 @@
  */
 package org.infinispan.loaders.cluster;
 
+import static java.util.Collections.emptySet;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.commands.remote.ClusteredGetCommand;
@@ -41,14 +47,8 @@ import org.infinispan.remoting.rpc.ResponseFilter;
 import org.infinispan.remoting.rpc.ResponseMode;
 import org.infinispan.remoting.rpc.RpcManager;
 import org.infinispan.remoting.transport.Address;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-
-import static java.util.Collections.emptySet;
 
 /**
  * Cache loader that consults other members in the cluster for values. A <code>remoteCallTimeout</code> property is
@@ -58,7 +58,7 @@ import static java.util.Collections.emptySet;
  */
 @CacheLoaderMetadata(configurationClass = ClusterCacheLoaderConfig.class)
 public class ClusterCacheLoader extends AbstractCacheLoader {
-   private static final Log log = LogFactory.getLog(ClusterCacheLoader.class);
+   private static final ALogger log = LogFactory.getLog(ClusterCacheLoader.class);
 
    private ClusterCacheLoaderConfig config;
    private RpcManager rpcManager;
@@ -96,7 +96,7 @@ public class ClusterCacheLoader extends AbstractCacheLoader {
          return value.toInternalCacheEntry(key);
       }
 
-      log.unknownResponsesFromRemoteCache(responses);
+      log.error("Unknown responses from remote cache: " + responses);
       throw new CacheLoaderException("Unknown responses");
    }
 
@@ -138,7 +138,7 @@ public class ClusterCacheLoader extends AbstractCacheLoader {
       try {
          return rpcManager.invokeRemotely(null, clusteredGetCommand, ResponseMode.WAIT_FOR_VALID_RESPONSE, config.getRemoteCallTimeout(), false, filter).values();
       } catch (Exception e) {
-         log.errorDoingRemoteCall(e);
+         log.error("Error while doing remote call", e);
          throw new CacheLoaderException(e);
       }
    }

@@ -23,8 +23,8 @@
 
 package org.infinispan.transaction;
 
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,7 +38,7 @@ import org.infinispan.container.entries.CacheEntry;
 import org.infinispan.container.versioning.EntryVersionsMap;
 import org.infinispan.transaction.xa.CacheTransaction;
 import org.infinispan.transaction.xa.GlobalTransaction;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -53,7 +53,7 @@ import org.infinispan.util.logging.LogFactory;
 public abstract class AbstractCacheTransaction implements CacheTransaction {
 
    protected final GlobalTransaction tx;
-   private static Log log = LogFactory.getLog(AbstractCacheTransaction.class);
+   private static ALogger log = LogFactory.getLog(AbstractCacheTransaction.class);
    private static final boolean trace = log.isTraceEnabled();
    private static final int INITIAL_LOCK_CAPACITY = 4;
 
@@ -123,7 +123,7 @@ public abstract class AbstractCacheTransaction implements CacheTransaction {
 
    @Override
    public void notifyOnTransactionFinished() {
-      if (trace) log.tracef("Transaction %s has completed, notifying listening threads.", tx);
+      if (trace) log.trace("Transaction " + tx + " has completed, notifying listening threads.");
       txComplete = true; //this one is cheap but does not guarantee visibility
       if (needToNotifyWaiters) {
          synchronized (this) {
@@ -137,7 +137,7 @@ public abstract class AbstractCacheTransaction implements CacheTransaction {
    public boolean waitForLockRelease(Object key, long lockAcquisitionTimeout) throws InterruptedException {
       if (txComplete) return true; //using an unsafe optimisation: if it's true, we for sure have the latest read of the value without needing memory barriers
       final boolean potentiallyLocked = hasLockOrIsLockBackup(key);
-      if (trace) log.tracef("Transaction gtx=%s potentially locks key %s? %s", tx, key, potentiallyLocked);
+      if (trace) log.trace("Transaction gtx=" + tx + " potentially locks key " + key + "? " + potentiallyLocked);
       if (potentiallyLocked) {
          synchronized (this) {
             // Check again after acquiring a lock on the monitor that the transaction has completed.
@@ -172,7 +172,7 @@ public abstract class AbstractCacheTransaction implements CacheTransaction {
    public void registerLockedKey(Object key) {
       // we need to synchronize this collection to be able to get a valid snapshot from another thread during state transfer
       if (lockedKeys == null) lockedKeys = Collections.synchronizedSet(new HashSet<Object>(INITIAL_LOCK_CAPACITY));
-      if (trace) log.tracef("Registering locked key: %s", key);
+      if (trace) log.trace("Registering locked key: " + key);
       lockedKeys.add(key);
    }
 
@@ -188,7 +188,7 @@ public abstract class AbstractCacheTransaction implements CacheTransaction {
 
    @Override
    public void clearLockedKeys() {
-      if (trace) log.tracef("Clearing locked keys: %s", lockedKeys);
+      if (trace) log.trace("Clearing locked keys: " + lockedKeys);
       lockedKeys = null;
    }
 

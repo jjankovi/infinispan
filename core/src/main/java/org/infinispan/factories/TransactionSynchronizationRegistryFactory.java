@@ -25,8 +25,7 @@ package org.infinispan.factories;
 import org.infinispan.config.ConfigurationException;
 import org.infinispan.factories.annotations.DefaultFactoryFor;
 import org.infinispan.transaction.lookup.TransactionSynchronizationRegistryLookup;
-
-import javax.transaction.TransactionSynchronizationRegistry;
+import org.transaction.TransactionSynchronizationRegistry;
 
 /**
  * Factory for the TransactionSynchronizationRegistry

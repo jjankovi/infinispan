@@ -22,6 +22,17 @@
  */
 package org.infinispan.interceptors;
 
+import static org.infinispan.factories.KnownComponentNames.CACHE_MARSHALLER;
+import static org.infinispan.marshall.MarshalledValue.isTypeExcluded;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import org.infinispan.commands.control.LockControlCommand;
 import org.infinispan.commands.read.EntrySetCommand;
 import org.infinispan.commands.read.GetKeyValueCommand;
@@ -43,19 +54,8 @@ import org.infinispan.interceptors.base.CommandInterceptor;
 import org.infinispan.marshall.MarshalledValue;
 import org.infinispan.marshall.StreamingMarshaller;
 import org.infinispan.util.Immutables;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import static org.infinispan.factories.KnownComponentNames.CACHE_MARSHALLER;
-import static org.infinispan.marshall.MarshalledValue.isTypeExcluded;
 
 /**
  * Interceptor that handles the wrapping and unwrapping of cached data using {@link
@@ -77,11 +77,11 @@ public class MarshalledValueInterceptor extends CommandInterceptor {
    private boolean wrapValues = true;
    private InternalEntryFactory entryFactory;
 
-   private static final Log log = LogFactory.getLog(MarshalledValueInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(MarshalledValueInterceptor.class);
    private static final boolean trace = log.isTraceEnabled();
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 
@@ -322,7 +322,7 @@ public class MarshalledValueInterceptor extends CommandInterceptor {
    private Object processRetVal(Object retVal, InvocationContext ctx) {
       if (retVal instanceof MarshalledValue) {
          if (ctx.isOriginLocal()) {
-            if (trace) log.tracef("Return is a marshall value, so extract instance from: %s", retVal);
+            if (trace) log.trace("Return is a marshall value, so extract instance from: " + retVal);
             retVal = ((MarshalledValue) retVal).get();
          }
       }
@@ -335,7 +335,7 @@ public class MarshalledValueInterceptor extends CommandInterceptor {
          if (trace) log.trace("Map is nul; returning an empty map.");
          return Collections.emptyMap();
       }
-      if (trace) log.tracef("Wrapping map contents of argument %s", m);
+      if (trace) log.trace("Wrapping map contents of argument " + m);
       Map<Object, Object> copy = new HashMap(m.size());
       for (Map.Entry<Object, Object> me : m.entrySet()) {
          Object key = me.getKey();

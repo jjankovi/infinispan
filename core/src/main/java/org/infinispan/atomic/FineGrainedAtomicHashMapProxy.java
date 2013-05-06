@@ -22,19 +22,19 @@
  */
 package org.infinispan.atomic;
 
-import org.infinispan.AdvancedCache;
-import org.infinispan.container.entries.CacheEntry;
-import org.infinispan.container.entries.DeltaAwareCacheEntry;
-import org.infinispan.context.Flag;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import org.infinispan.AdvancedCache;
+import org.infinispan.container.entries.CacheEntry;
+import org.infinispan.container.entries.DeltaAwareCacheEntry;
+import org.infinispan.context.Flag;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * A layer of indirection around an {@link FineGrainedAtomicMap} to provide consistency and isolation for concurrent readers
@@ -55,7 +55,7 @@ import java.util.Set;
  */
 public class FineGrainedAtomicHashMapProxy<K, V> extends AtomicHashMapProxy<K, V> implements FineGrainedAtomicMap<K,V> {
 
-   private static final Log log = LogFactory.getLog(FineGrainedAtomicHashMapProxy.class);
+   private static final ALogger log = LogFactory.getLog(FineGrainedAtomicHashMapProxy.class);
    private static final boolean trace = log.isTraceEnabled();
 
    FineGrainedAtomicHashMapProxy(AdvancedCache<?, ?> cache, Object deltaMapKey) {

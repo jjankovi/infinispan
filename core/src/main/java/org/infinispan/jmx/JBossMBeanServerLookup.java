@@ -23,11 +23,6 @@
 
 package org.infinispan.jmx;
 
-import org.infinispan.CacheException;
-import org.infinispan.util.Util;
-
-import javax.management.MBeanServer;
-import java.util.Properties;
 
 /**
  * MBeanServer lookup implementation to locate the JBoss MBeanServer.
@@ -37,14 +32,14 @@ import java.util.Properties;
  */
 public class JBossMBeanServerLookup implements MBeanServerLookup {
 
-   @Override
-   public MBeanServer getMBeanServer(Properties properties) {
-      Class<?> mbsLocator = Util.loadClass("org.jboss.mx.util.MBeanServerLocator", null);
-      try {
-         return (MBeanServer) mbsLocator.getMethod("locateJBoss").invoke(null);
-      } catch (Exception e) {
-         throw new CacheException("Unable to locate JBoss MBean server", e);
-      }
-   }
+//   @Override
+//   public MBeanServer getMBeanServer(Properties properties) {
+//      Class<?> mbsLocator = Util.loadClass("org.jboss.mx.util.MBeanServerLocator", null);
+//      try {
+//         return (MBeanServer) mbsLocator.getMethod("locateJBoss").invoke(null);
+//      } catch (Exception e) {
+//         throw new CacheException("Unable to locate JBoss MBean server", e);
+//      }
+//   }
 
 }

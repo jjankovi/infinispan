@@ -31,7 +31,7 @@ import org.infinispan.context.InvocationContext;
 import org.infinispan.distexec.mapreduce.MapReduceManager;
 import org.infinispan.distexec.mapreduce.Mapper;
 import org.infinispan.distexec.mapreduce.Reducer;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -44,7 +44,7 @@ import org.infinispan.util.logging.LogFactory;
  */
 public class MapCombineCommand<KIn, VIn, KOut, VOut> extends BaseRpcCommand {
    public static final int COMMAND_ID = 30;
-   private static final Log log = LogFactory.getLog(MapCombineCommand.class);
+   private static final ALogger log = LogFactory.getLog(MapCombineCommand.class);
    private Set<KIn> keys = new HashSet<KIn>();
    private Mapper<KIn, VIn, KOut, VOut> mapper;
    private Reducer<KOut, VOut> combiner;  

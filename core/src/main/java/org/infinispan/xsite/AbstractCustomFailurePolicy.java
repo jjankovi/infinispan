@@ -19,10 +19,10 @@
 
 package org.infinispan.xsite;
 
-import org.infinispan.Cache;
-
-import javax.transaction.Transaction;
 import java.util.Map;
+
+import org.infinispan.Cache;
+import org.transaction.Transaction;
 
 /**
  * Support class for {@link CustomFailurePolicy}.

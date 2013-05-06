@@ -22,6 +22,10 @@
  */
 package org.infinispan.remoting.transport;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
 import org.infinispan.commands.ReplicableCommand;
 import org.infinispan.factories.annotations.Start;
 import org.infinispan.factories.annotations.Stop;
@@ -31,14 +35,8 @@ import org.infinispan.lifecycle.Lifecycle;
 import org.infinispan.remoting.responses.Response;
 import org.infinispan.remoting.rpc.ResponseFilter;
 import org.infinispan.remoting.rpc.ResponseMode;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.xsite.XSiteBackup;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
-import static org.infinispan.factories.KnownComponentNames.*;
 
 /**
  * An interface that provides a communication link with remote caches.  Also allows remote caches to invoke commands on
@@ -127,5 +125,5 @@ public interface Transport extends Lifecycle {
     */
    int getViewId();
 
-   Log getLog();
+   ALogger getLog();
 }

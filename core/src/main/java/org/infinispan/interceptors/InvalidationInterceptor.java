@@ -22,6 +22,14 @@
  */
 package org.infinispan.interceptors;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.infinispan.commands.AbstractVisitor;
 import org.infinispan.commands.CommandsFactory;
 import org.infinispan.commands.FlagAffectedCommand;
@@ -46,22 +54,14 @@ import org.infinispan.jmx.annotations.ManagedOperation;
 import org.infinispan.transaction.xa.GlobalTransaction;
 import org.infinispan.util.concurrent.NotifyingFutureImpl;
 import org.infinispan.util.concurrent.NotifyingNotifiableFuture;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 import org.rhq.helpers.pluginAnnotations.agent.DataType;
 import org.rhq.helpers.pluginAnnotations.agent.MeasurementType;
 import org.rhq.helpers.pluginAnnotations.agent.Metric;
 import org.rhq.helpers.pluginAnnotations.agent.Operation;
 import org.rhq.helpers.pluginAnnotations.agent.Parameter;
-
-import javax.transaction.Transaction;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
+import org.transaction.Transaction;
 
 
 /**
@@ -85,10 +85,10 @@ public class InvalidationInterceptor extends BaseRpcInterceptor {
    @ManagedAttribute(description = "Enables or disables the gathering of statistics by this component", writable = true)
    private boolean statisticsEnabled;
 
-   private static final Log log = LogFactory.getLog(InvalidationInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(InvalidationInterceptor.class);
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 
@@ -139,7 +139,7 @@ public class InvalidationInterceptor extends BaseRpcInterceptor {
    @Override
    public Object visitPrepareCommand(TxInvocationContext ctx, PrepareCommand command) throws Throwable {
       Object retval = invokeNextInterceptor(ctx, command);
-      log.tracef("Entering InvalidationInterceptor's prepare phase.  Ctx flags are empty");
+      log.trace("Entering InvalidationInterceptor's prepare phase.  Ctx flags are empty");
       // fetch the modifications before the transaction is committed (and thus removed from the txTable)
       if (shouldInvokeRemoteTxCommand(ctx)) {
          List<WriteCommand> mods = Arrays.asList(command.getModifications());
@@ -147,7 +147,7 @@ public class InvalidationInterceptor extends BaseRpcInterceptor {
          if (runningTransaction == null) throw new IllegalStateException("we must have an associated transaction");
          broadcastInvalidateForPrepare(mods, runningTransaction, ctx);
       } else {
-         log.tracef("Nothing to invalidate - no modifications in the transaction.");
+         log.trace("Nothing to invalidate - no modifications in the transaction.");
       }
       return retval;
    }

@@ -23,6 +23,10 @@
 
 package org.infinispan.interceptors.locking;
 
+import static org.infinispan.transaction.WriteSkewHelper.performWriteSkewCheckAndReturnNewVersions;
+
+import java.util.Collection;
+
 import org.infinispan.commands.tx.VersionedPrepareCommand;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.container.DataContainer;
@@ -40,12 +44,8 @@ import org.infinispan.remoting.transport.Address;
 import org.infinispan.statetransfer.StateTransferLock;
 import org.infinispan.transaction.WriteSkewHelper;
 import org.infinispan.transaction.xa.CacheTransaction;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.Collection;
-
-import static org.infinispan.transaction.WriteSkewHelper.performWriteSkewCheckAndReturnNewVersions;
 
 // todo [anistor] need to review this for NBST
 /**
@@ -59,7 +59,7 @@ import static org.infinispan.transaction.WriteSkewHelper.performWriteSkewCheckAn
 @Scope(Scopes.NAMED_CACHE)
 public interface ClusteringDependentLogic {
 
-   Log log = LogFactory.getLog(ClusteringDependentLogic.class);
+   ALogger log = LogFactory.getLog(ClusteringDependentLogic.class);
 
    boolean localNodeIsOwner(Object key);
 
@@ -181,7 +181,7 @@ public interface ClusteringDependentLogic {
       public boolean localNodeIsPrimaryOwner(Object key) {
          final Address address = rpcManager.getAddress();
          final boolean result = dm.getPrimaryLocation(key).equals(address);
-         log.tracef("My address is %s. Am I main owner? - %b", address, result);
+         log.trace("My address is " + address + ". Am I main owner? - " + result);
          return result;
       }
 

@@ -22,6 +22,8 @@
  */
 package org.infinispan.transaction.xa;
 
+import java.util.concurrent.ConcurrentMap;
+
 import org.infinispan.Cache;
 import org.infinispan.CacheException;
 import org.infinispan.factories.annotations.Inject;
@@ -30,13 +32,11 @@ import org.infinispan.transaction.LocalTransaction;
 import org.infinispan.transaction.TransactionTable;
 import org.infinispan.transaction.xa.recovery.RecoveryManager;
 import org.infinispan.util.concurrent.ConcurrentMapFactory;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.Transaction;
-import javax.transaction.xa.XAException;
-import javax.transaction.xa.Xid;
-import java.util.concurrent.ConcurrentMap;
+import org.transaction.Transaction;
+import org.transaction.xa.XAException;
+import org.transaction.xa.Xid;
 
 /**
  * {@link TransactionTable} to be used with {@link TransactionXaAdapter}.
@@ -46,7 +46,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class XaTransactionTable extends TransactionTable {
 
-   private static final Log log = LogFactory.getLog(XaTransactionTable.class);
+   private static final ALogger log = LogFactory.getLog(XaTransactionTable.class);
 
    protected ConcurrentMap<Xid, LocalXaTransaction> xid2LocalTx;
    private RecoveryManager recoveryManager;

@@ -22,6 +22,35 @@
  */
 package org.infinispan.config;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.lang.ref.SoftReference;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.ValidationEvent;
+import javax.xml.bind.ValidationEventHandler;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.transform.sax.SAXSource;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.SchemaFactory;
+
 import org.infinispan.Version;
 import org.infinispan.config.parsing.NamespaceFilter;
 import org.infinispan.config.parsing.XmlConfigurationParser;
@@ -31,28 +60,12 @@ import org.infinispan.util.FileLookupFactory;
 import org.infinispan.util.StringPropertyReplacer;
 import org.infinispan.util.SysPropertyActions;
 import org.infinispan.util.Util;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLFilter;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
-
-import javax.xml.bind.*;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.transform.sax.SAXSource;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.SchemaFactory;
-import java.io.*;
-import java.lang.ref.SoftReference;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * InfinispanConfiguration encapsulates root component of Infinispan XML configuration. Can be empty
@@ -69,7 +82,7 @@ import java.util.Map;
 @Deprecated
 public class InfinispanConfiguration implements XmlConfigurationParser, JAXBUnmarshallable {
 
-   private static final Log log = LogFactory.getLog(InfinispanConfiguration.class);
+   private static final ALogger log = LogFactory.getLog(InfinispanConfiguration.class);
 
    public static final String VALIDATING_SYSTEM_PROPERTY = "infinispan.config.validate";
 
@@ -334,7 +347,8 @@ public class InfinispanConfiguration implements XmlConfigurationParser, JAXBUnma
          if (dollar > 0 && line.indexOf('{', dollar) > 0 && line.indexOf('}', dollar) > 0) {
             String replacedLine = StringPropertyReplacer.replaceProperties(line);
             if (line.equals(replacedLine)) {
-               log.propertyCouldNotBeReplaced(line.substring(line.indexOf('{') + 1, line.indexOf('}')));
+               log.warn("Property " + line.substring(line.indexOf('{') + 1, line.indexOf('}')) + 
+            		   " could not be replaced as intended!");
             }
             w.append(replacedLine);
          } else {
@@ -371,35 +385,37 @@ public class InfinispanConfiguration implements XmlConfigurationParser, JAXBUnma
          // Schema's are always stored in Infinispan
          is = fileLookup.lookupFile(localPathToSchema, null);
          if (is != null) {
-            log.debugf("Using schema %s", localPathToSchema);
+            log.debug("Using schema " + localPathToSchema);
             return is;
          }
          if (log.isDebugEnabled()) {
-            log.debugf("Could not find schema on path %s, resolving %s to %s",
-                       localPathToSchema, SCHEMA_SYSTEM_PROPERTY, schemaPath());
+            log.debug("Could not find schema on path " + localPathToSchema + ", " +
+            		"resolving " + SCHEMA_SYSTEM_PROPERTY + " to " + schemaPath());
          }
       }
 
       //2. resolve local schema path in infinispan distro
       is = fileLookup.lookupFile(schemaPath(), null);
       if (is != null) {
-         log.debugf("Using schema %s", schemaPath());
+         log.debug("Using schema " + schemaPath());
          return is;
       }
       if (log.isDebugEnabled()) {
-         log.debugf("Could not find schema on path %s, resolving %s to %s",
-                    schemaPath(), SCHEMA_SYSTEM_PROPERTY, schemaURL());
+         log.debug("Could not find schema on path " + schemaPath() + 
+        		 ", resolving " + SCHEMA_SYSTEM_PROPERTY + " to " + schemaURL());
       }
 
       //3. resolve URL
       try {
          is = new URL(schemaURL()).openStream();
-         log.debugf("Using schema %s", schemaURL());
+         log.debug("Using schema " + schemaURL());
          return is;
       } catch (Exception e) {
       }
 
-      log.couldNotResolveConfigurationSchema(localPathToSchema, schemaPath(), schemaURL());
+      log.warn("Infinispan configuration schema could not be resolved locally nor " +
+      		"fetched from URL. Local path=" + localPathToSchema + ", schema path=" + 
+    		  schemaPath() + ", schema URL=" + schemaURL());
       return null;
    }
 

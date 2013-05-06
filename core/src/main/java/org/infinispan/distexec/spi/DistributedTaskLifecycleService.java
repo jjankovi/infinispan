@@ -26,11 +26,11 @@ import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
 
 import org.infinispan.Cache;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 public final class DistributedTaskLifecycleService {
-   private static final Log log = LogFactory.getLog(DistributedTaskLifecycleService.class);
+   private static final ALogger log = LogFactory.getLog(DistributedTaskLifecycleService.class);
    private static DistributedTaskLifecycleService service;
    private final List<DistributedTaskLifecycle> lifecycles;
 
@@ -55,9 +55,9 @@ public final class DistributedTaskLifecycleService {
             l.onPreExecute(task, inputCache);
          }
       } catch (ServiceConfigurationError serviceError) {
-         log.errorReadingProperties(new IOException(
+    	  log.warn("Unexpected error reading properties", (new IOException(
                   "Could not properly load and instantiate DistributedTaskLifecycle service ",
-                  serviceError));
+                  serviceError)));
       }
    }
 
@@ -67,9 +67,9 @@ public final class DistributedTaskLifecycleService {
             l.onPostExecute(task);
          }
       } catch (ServiceConfigurationError serviceError) {
-         log.errorReadingProperties(new IOException(
+    	  log.warn("Unexpected error reading properties", (new IOException(
                   "Could not properly load and instantiate DistributedTaskLifecycle service ",
-                  serviceError));
+                  serviceError)));
       }
    }
 }

@@ -22,11 +22,12 @@
  */
 package org.infinispan.transaction.xa;
 
+
+
 import org.infinispan.transaction.LocalTransaction;
 import org.infinispan.transaction.xa.recovery.RecoverableTransactionIdentifier;
-
-import javax.transaction.Transaction;
-import javax.transaction.xa.Xid;
+import org.transaction.Transaction;
+import org.transaction.xa.Xid;
 
 /**
  * {@link LocalTransaction} implementation to be used with {@link TransactionXaAdapter}.

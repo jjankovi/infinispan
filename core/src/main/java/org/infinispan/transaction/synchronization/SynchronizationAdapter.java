@@ -22,6 +22,8 @@
  */
 package org.infinispan.transaction.synchronization;
 
+
+
 import org.infinispan.CacheException;
 import org.infinispan.commands.CommandsFactory;
 import org.infinispan.configuration.cache.Configuration;
@@ -31,12 +33,11 @@ import org.infinispan.transaction.AbstractEnlistmentAdapter;
 import org.infinispan.transaction.LocalTransaction;
 import org.infinispan.transaction.TransactionCoordinator;
 import org.infinispan.transaction.TransactionTable;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.Status;
-import javax.transaction.Synchronization;
-import javax.transaction.xa.XAException;
+import org.transaction.Status;
+import org.transaction.Synchronization;
+import org.transaction.xa.XAException;
 
 /**
  * {@link Synchronization} implementation for integrating with the TM.
@@ -47,7 +48,7 @@ import javax.transaction.xa.XAException;
  */
 public class SynchronizationAdapter extends AbstractEnlistmentAdapter implements Synchronization {
 
-   private static final Log log = LogFactory.getLog(SynchronizationAdapter.class);
+   private static final ALogger log = LogFactory.getLog(SynchronizationAdapter.class);
 
    private final LocalTransaction localTransaction;
    private final TransactionCoordinator txCoordinator;
@@ -63,7 +64,7 @@ public class SynchronizationAdapter extends AbstractEnlistmentAdapter implements
 
    @Override
    public void beforeCompletion() {
-      log.tracef("beforeCompletion called for %s", localTransaction);
+      log.trace("beforeCompletion called for " + localTransaction);
       try {
          txCoordinator.prepare(localTransaction);
       } catch (XAException e) {
@@ -74,7 +75,7 @@ public class SynchronizationAdapter extends AbstractEnlistmentAdapter implements
    @Override
    public void afterCompletion(int status) {
       if (log.isTraceEnabled()) {
-         log.tracef("afterCompletion(%s) called for %s.", status, localTransaction);
+         log.trace("afterCompletion(" + status + ") called for " + localTransaction);
       }
       if (status == Status.STATUS_COMMITTED) {
          try {

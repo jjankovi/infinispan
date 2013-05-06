@@ -24,10 +24,10 @@ package org.infinispan.loaders;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.infinispan.context.Flag.CACHE_MODE_LOCAL;
+import static org.infinispan.context.Flag.IGNORE_RETURN_VALUES;
 import static org.infinispan.context.Flag.SKIP_CACHE_STORE;
 import static org.infinispan.context.Flag.SKIP_INDEXING;
 import static org.infinispan.context.Flag.SKIP_OWNERSHIP_CHECK;
-import static org.infinispan.context.Flag.IGNORE_RETURN_VALUES;
 import static org.infinispan.factories.KnownComponentNames.CACHE_MARSHALLER;
 
 import java.util.ArrayList;
@@ -36,9 +36,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
-import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
 
 import org.infinispan.AdvancedCache;
 import org.infinispan.CacheException;
@@ -50,7 +47,6 @@ import org.infinispan.configuration.cache.LoadersConfiguration;
 import org.infinispan.configuration.cache.StoreConfiguration;
 import org.infinispan.container.entries.InternalCacheEntry;
 import org.infinispan.context.Flag;
-import org.infinispan.context.InvocationContext;
 import org.infinispan.context.InvocationContextContainer;
 import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.factories.annotations.ComponentName;
@@ -66,13 +62,14 @@ import org.infinispan.loaders.decorators.SingletonStore;
 import org.infinispan.loaders.decorators.SingletonStoreConfig;
 import org.infinispan.marshall.StreamingMarshaller;
 import org.infinispan.statetransfer.StateTransferManager;
-import org.infinispan.topology.CacheTopology;
 import org.infinispan.util.Util;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
+import org.transaction.Transaction;
+import org.transaction.TransactionManager;
 
 public class CacheLoaderManagerImpl implements CacheLoaderManager {
-   private static final Log log = LogFactory.getLog(CacheLoaderManagerImpl.class);
+   private static final ALogger log = LogFactory.getLog(CacheLoaderManagerImpl.class);
 
    Configuration configuration;
    LoadersConfiguration clmConfig;
@@ -194,10 +191,10 @@ public class CacheLoaderManagerImpl implements CacheLoaderManager {
          } else {
             if (loader.getClass().getName().equals(loaderType)) {
                try {
-                  log.debugf("Stopping and removing cache loader %s", loaderType);
+                  log.debug("Stopping and removing cache loader " + loaderType);
                   loader.stop();
                } catch (Exception e) {
-                  log.infof("Problems shutting down cache loader %s", loaderType, e);
+                  log.info("Problems shutting down cache loader " + loaderType, e);
                }
                disableInterceptors = true;
             }
@@ -225,14 +222,14 @@ public class CacheLoaderManagerImpl implements CacheLoaderManager {
          if (clmConfig.preload()) {
             // Don't preload anything if we're not the first member to start up
             if (stateTransferManager != null && !stateTransferManager.isLocalNodeFirst()) {
-               log.debugf("We are not the first node to join cache %s, skipping preload", cache.getName());
+               log.debug("We are not the first node to join cache " + cache.getName() + ", skipping preload");
                return;
             }
             long start = 0;
             boolean debugTiming = log.isDebugEnabled();
             if (debugTiming) {
                start = System.nanoTime();
-               log.debugf("Preloading transient state from cache loader %s", loader);
+               log.debug("Preloading transient state from cache loader " + loader);
             }
             Set<InternalCacheEntry> state;
             try {
@@ -261,7 +258,8 @@ public class CacheLoaderManagerImpl implements CacheLoaderManager {
 
             if (debugTiming) {
                final long stop = System.nanoTime();
-               log.debugf("Preloaded %s keys in %s", state.size(), Util.prettyPrintTime(stop - start, TimeUnit.NANOSECONDS));
+               log.debug("Preloaded " + state.size() + " keys in " 
+               +  Util.prettyPrintTime(stop - start, TimeUnit.NANOSECONDS));
             }
          }
       }

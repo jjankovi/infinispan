@@ -22,10 +22,6 @@
  */
 package org.infinispan.util;
 
-import org.infinispan.CacheException;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -36,6 +32,10 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.infinispan.CacheException;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
+
 /**
  * Basic reflection utilities to enhance what the JDK provides.
  *
@@ -43,7 +43,7 @@ import java.util.List;
  * @since 4.0
  */
 public class ReflectionUtil {
-   private static final Log log = LogFactory.getLog(ReflectionUtil.class);
+   private static final ALogger log = LogFactory.getLog(ReflectionUtil.class);
 
    private static final String[] EMPTY_STRING_ARRAY = {};
 
@@ -209,7 +209,7 @@ public class ReflectionUtil {
          f.setAccessible(true);
          f.set(instance, value);
       } catch (Exception e) {
-         log.unableToSetValue(e);
+         log.error("Unable to set value!", e);
       }
    }
 

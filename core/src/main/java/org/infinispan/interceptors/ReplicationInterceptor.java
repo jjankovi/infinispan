@@ -22,6 +22,12 @@
  */
 package org.infinispan.interceptors;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeoutException;
+
 import org.infinispan.commands.CommandsFactory;
 import org.infinispan.commands.read.AbstractDataCommand;
 import org.infinispan.commands.read.GetKeyValueCommand;
@@ -59,14 +65,8 @@ import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.xa.GlobalTransaction;
 import org.infinispan.util.concurrent.NotifyingFutureImpl;
 import org.infinispan.util.concurrent.NotifyingNotifiableFuture;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Takes care of replicating modifications to other caches in a cluster.
@@ -82,11 +82,11 @@ public class ReplicationInterceptor extends BaseRpcInterceptor {
 
    private boolean isPessimisticCache;
 
-   private static final Log log = LogFactory.getLog(ReplicationInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(ReplicationInterceptor.class);
    private static final boolean trace = log.isTraceEnabled();
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 
@@ -186,7 +186,7 @@ public class ReplicationInterceptor extends BaseRpcInterceptor {
    private Object remoteGet(InvocationContext ctx, AbstractDataCommand command, boolean isWrite) throws Throwable {
       Object key = command.getKey();
       if (trace) {
-         log.tracef("Key %s is not yet available on %s, so we may need to look elsewhere", key, rpcManager.getAddress());
+         log.trace("Key " + key + " is not yet available on " + rpcManager.getAddress() + ", so we may need to look elsewhere");
       }
       boolean acquireRemoteLock = false;
       if (ctx.isInTxScope()) {

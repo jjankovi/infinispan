@@ -22,6 +22,15 @@
  */
 package org.infinispan.commands.control;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.infinispan.commands.FlagAffectedCommand;
 import org.infinispan.commands.Visitor;
 import org.infinispan.commands.tx.AbstractTransactionBoundaryCommand;
@@ -31,17 +40,8 @@ import org.infinispan.context.impl.RemoteTxInvocationContext;
 import org.infinispan.context.impl.TxInvocationContext;
 import org.infinispan.transaction.RemoteTransaction;
 import org.infinispan.transaction.xa.GlobalTransaction;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 
 /**
@@ -55,7 +55,7 @@ import java.util.Set;
  */
 public class LockControlCommand extends AbstractTransactionBoundaryCommand implements FlagAffectedCommand {
 
-   private static final Log log = LogFactory.getLog(LockControlCommand.class);
+   private static final ALogger log = LogFactory.getLog(LockControlCommand.class);
 
    public static final int COMMAND_ID = 3;
 
@@ -140,7 +140,7 @@ public class LockControlCommand extends AbstractTransactionBoundaryCommand imple
 
       if (transaction == null) {
          if (unlock) {
-            log.tracef("Unlock for non-existant transaction %s.  Not doing anything.", globalTx);
+            log.trace("Unlock for non-existant transaction " + globalTx + ".  Not doing anything.");
             return null;
          }
          //create a remote tx without any modifications (we do not know modifications ahead of time)

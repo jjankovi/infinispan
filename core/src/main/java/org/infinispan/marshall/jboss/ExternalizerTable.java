@@ -23,6 +23,14 @@
 
 package org.infinispan.marshall.jboss;
 
+import static org.infinispan.factories.KnownComponentNames.GLOBAL_MARSHALLER;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
+
 import org.infinispan.CacheException;
 import org.infinispan.atomic.AtomicHashMap;
 import org.infinispan.atomic.AtomicHashMapDelta;
@@ -74,14 +82,14 @@ import org.infinispan.marshall.exts.MapExternalizer;
 import org.infinispan.marshall.exts.ReplicableCommandExternalizer;
 import org.infinispan.marshall.exts.SetExternalizer;
 import org.infinispan.marshall.exts.SingletonListExternalizer;
-import org.infinispan.statetransfer.StateChunk;
-import org.infinispan.statetransfer.TransactionInfo;
 import org.infinispan.remoting.responses.ExceptionResponse;
 import org.infinispan.remoting.responses.SuccessfulResponse;
 import org.infinispan.remoting.responses.UnsuccessfulResponse;
 import org.infinispan.remoting.responses.UnsureResponse;
 import org.infinispan.remoting.transport.jgroups.JGroupsAddress;
 import org.infinispan.remoting.transport.jgroups.JGroupsTopologyAwareAddress;
+import org.infinispan.statetransfer.StateChunk;
+import org.infinispan.statetransfer.TransactionInfo;
 import org.infinispan.topology.CacheJoinInfo;
 import org.infinispan.topology.CacheTopology;
 import org.infinispan.transaction.xa.DldGlobalTransaction;
@@ -92,19 +100,11 @@ import org.infinispan.transaction.xa.recovery.RecoveryAwareGlobalTransaction;
 import org.infinispan.transaction.xa.recovery.SerializableXid;
 import org.infinispan.util.ByteArrayKey;
 import org.infinispan.util.Immutables;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 import org.jboss.marshalling.Marshaller;
 import org.jboss.marshalling.ObjectTable;
 import org.jboss.marshalling.Unmarshaller;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.WeakHashMap;
-
-import static org.infinispan.factories.KnownComponentNames.GLOBAL_MARSHALLER;
 
 /**
  * The externalizer table maintains information necessary to be able to map a particular type with the corresponding
@@ -119,7 +119,7 @@ import static org.infinispan.factories.KnownComponentNames.GLOBAL_MARSHALLER;
  */
 @Scope(Scopes.GLOBAL)
 public class ExternalizerTable implements ObjectTable {
-   private static final Log log = LogFactory.getLog(ExternalizerTable.class);
+   private static final ALogger log = LogFactory.getLog(ExternalizerTable.class);
 
    /**
     * Contains mapping of classes to their corresponding externalizer classes via ExternalizerAdapter instances.
@@ -157,8 +157,8 @@ public class ExternalizerTable implements ObjectTable {
       loadForeignMarshallables(gcr.getGlobalConfiguration());
       started = true;
       if (log.isTraceEnabled()) {
-         log.tracef("Constant object table was started and contains these externalizer readers: %s", readers);
-         log.tracef("The externalizer writers collection contains: %s", writers);
+         log.trace("Constant object table was started and contains these externalizer readers: " + readers);
+         log.trace("The externalizer writers collection contains: " +  writers);
       }
    }
 
@@ -192,7 +192,8 @@ public class ExternalizerTable implements ObjectTable {
       ExternalizerAdapter adapter = readers.get(readerIndex);
       if (adapter == null) {
          if (!started) {
-            log.tracef("Either the marshaller has stopped or hasn't started. Read externalizers are not properly populated: %s", readers);
+            log.trace("Either the marshaller has stopped or hasn't started. " +
+            		"Read externalizers are not properly populated: " + readers);
 
             if (Thread.currentThread().isInterrupted()) {
                throw new IOException(String.format(
@@ -205,8 +206,8 @@ public class ExternalizerTable implements ObjectTable {
             }
          } else {
             if (log.isTraceEnabled()) {
-               log.tracef("Unknown type. Input stream has %s to read", input.available());
-               log.tracef("Check contents of read externalizers: %s", readers);
+               log.trace("Unknown type. Input stream has " + input.available() + " to read");
+               log.trace("Check contents of read externalizers: " + readers);
             }
 
             throw new CacheException(String.format(
@@ -349,8 +350,8 @@ public class ExternalizerTable implements ObjectTable {
                adapter.id, typeClass, prevReader.externalizer.getClass().getName(), readerIndex));
 
       if (log.isTraceEnabled())
-         log.tracef("Loaded externalizer %s for %s with id %s and reader index %s",
-                   adapter.externalizer.getClass().getName(), typeClass, adapter.id, readerIndex);
+         log.trace("Loaded externalizer " + adapter.externalizer.getClass().getName() + " " +
+         		"for " + typeClass + " with id " + adapter.id + " and reader index " + readerIndex);
 
    }
 

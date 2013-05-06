@@ -22,15 +22,15 @@
  */
 package org.infinispan.config;
 
+import java.util.Set;
+
 import org.infinispan.config.Configuration.EvictionType;
 import org.infinispan.config.GlobalConfiguration.TransportType;
 import org.infinispan.loaders.CacheLoaderConfig;
 import org.infinispan.loaders.CacheStoreConfig;
 import org.infinispan.loaders.decorators.SingletonStoreConfig;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.Set;
 
 /**
  * ConfigurationValidatingVisitor checks semantic validity of InfinispanConfiguration instance.
@@ -44,7 +44,7 @@ import java.util.Set;
 @Deprecated
 public class ConfigurationValidatingVisitor extends AbstractConfigurationBeanVisitor {
 
-   private static final Log log = LogFactory.getLog(ConfigurationValidatingVisitor.class);
+   private static final ALogger log = LogFactory.getLog(ConfigurationValidatingVisitor.class);
 
    private TransportType tt = null;
    private boolean evictionEnabled = false;
@@ -110,7 +110,8 @@ public class ConfigurationValidatingVisitor extends AbstractConfigurationBeanVis
    @Override
    public void visitCacheLoaderManagerConfig(CacheLoaderManagerConfig cacheLoaderManagerConfig) {
       if (!evictionEnabled && cacheLoaderManagerConfig.isPassivation())
-         log.passivationWithoutEviction();
+         log.info("Passivation configured without an eviction policy being selected. " +
+      "Only manually evicted entities will be passivated.");
 
       boolean shared = cacheLoaderManagerConfig.isShared();
       if (!shared) {
@@ -120,7 +121,8 @@ public class ConfigurationValidatingVisitor extends AbstractConfigurationBeanVis
                Boolean fetchPersistentState = storeConfig.isFetchPersistentState();
                Boolean purgeOnStartup = storeConfig.isPurgeOnStartup();
                if (!fetchPersistentState && !purgeOnStartup && cfg.getCacheMode().isClustered()) {
-                  log.staleEntriesWithoutFetchPersistentStateOrPurgeOnStartup();
+                  log.warn("Fetch persistent state and purge on startup are both disabled, cache may " +
+                  		"contain stale entries on startup");
                }
             }
          }
@@ -152,7 +154,8 @@ public class ConfigurationValidatingVisitor extends AbstractConfigurationBeanVis
          else
             classLoader.loadClass(clazz);
       } catch (ClassNotFoundException e) {
-         log.warnf("Indexing can only be enabled if infinispan-query.jar is available on your classpath, and this jar has not been detected. Intended behavior may not be exhibited.");
+         log.warn("Indexing can only be enabled if infinispan-query.jar is available on your " +
+         		"classpath, and this jar has not been detected. Intended behavior may not be exhibited.");
       }
    }
 

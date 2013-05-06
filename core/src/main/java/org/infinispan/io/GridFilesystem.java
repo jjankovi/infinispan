@@ -22,11 +22,8 @@
  */
 package org.infinispan.io;
 
-import org.infinispan.AdvancedCache;
-import org.infinispan.Cache;
-import org.infinispan.context.Flag;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
+import static org.infinispan.context.Flag.FORCE_ASYNCHRONOUS;
+import static org.infinispan.context.Flag.FORCE_SYNCHRONOUS;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -34,8 +31,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import static org.infinispan.context.Flag.FORCE_ASYNCHRONOUS;
-import static org.infinispan.context.Flag.FORCE_SYNCHRONOUS;
+import org.infinispan.AdvancedCache;
+import org.infinispan.Cache;
+import org.infinispan.context.Flag;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * Entry point for GridFile and GridInputStream / GridOutputStream
@@ -45,7 +45,7 @@ import static org.infinispan.context.Flag.FORCE_SYNCHRONOUS;
  */
 public class GridFilesystem {
 
-   private static final Log log = LogFactory.getLog(GridFilesystem.class);
+   private static final ALogger log = LogFactory.getLog(GridFilesystem.class);
 
    protected final Cache<String, byte[]> data;
    protected final Cache<String, GridFile.Metadata> metadata;

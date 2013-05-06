@@ -22,7 +22,7 @@
  */
 package org.infinispan.transaction.lookup;
 
-import javax.transaction.TransactionSynchronizationRegistry;
+import org.transaction.TransactionSynchronizationRegistry;
 
 /**
  * @author Stuart Douglas

@@ -22,14 +22,15 @@
  */
 package org.infinispan.transaction.xa.recovery;
 
-import org.infinispan.remoting.transport.Address;
-import org.infinispan.transaction.xa.GlobalTransaction;
-
-import javax.transaction.xa.Xid;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
+import org.infinispan.remoting.transport.Address;
+import org.infinispan.transaction.xa.GlobalTransaction;
+import org.transaction.Status;
+import org.transaction.xa.Xid;
 
 /**
  * RecoveryManager is the component responsible with managing recovery related information and the functionality

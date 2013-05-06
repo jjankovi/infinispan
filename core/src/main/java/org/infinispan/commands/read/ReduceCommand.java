@@ -30,7 +30,7 @@ import org.infinispan.commands.remote.BaseRpcCommand;
 import org.infinispan.context.InvocationContext;
 import org.infinispan.distexec.mapreduce.MapReduceManager;
 import org.infinispan.distexec.mapreduce.Reducer;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -43,7 +43,7 @@ import org.infinispan.util.logging.LogFactory;
 public class ReduceCommand<KOut, VOut> extends BaseRpcCommand {
 
    public static final int COMMAND_ID = 31;
-   private static final Log log = LogFactory.getLog(ReduceCommand.class);
+   private static final ALogger log = LogFactory.getLog(ReduceCommand.class);
    private Set<KOut> keys = new HashSet<KOut>();
    private Reducer<KOut, VOut> reducer;
    private String taskId;

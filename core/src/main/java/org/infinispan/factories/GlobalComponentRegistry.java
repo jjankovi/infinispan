@@ -22,9 +22,17 @@
  */
 package org.infinispan.factories;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import net.jcip.annotations.ThreadSafe;
+
+import org.apache.log4j.Logger;
 import org.infinispan.CacheException;
-import org.infinispan.Version;
 import org.infinispan.commands.module.ModuleCommandFactory;
 import org.infinispan.commands.module.ModuleCommandInitializer;
 import org.infinispan.configuration.global.GlobalConfiguration;
@@ -33,7 +41,6 @@ import org.infinispan.factories.annotations.SurvivesRestarts;
 import org.infinispan.factories.components.ComponentMetadataRepo;
 import org.infinispan.factories.scopes.Scope;
 import org.infinispan.factories.scopes.Scopes;
-import org.infinispan.jmx.CacheManagerJmxRegistration;
 import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.lifecycle.ModuleLifecycle;
 import org.infinispan.manager.EmbeddedCacheManager;
@@ -42,18 +49,8 @@ import org.infinispan.notifications.cachemanagerlistener.CacheManagerNotifier;
 import org.infinispan.notifications.cachemanagerlistener.CacheManagerNotifierImpl;
 import org.infinispan.remoting.transport.Transport;
 import org.infinispan.util.ModuleProperties;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.management.MBeanServer;
-import javax.management.MBeanServerFactory;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * A global component registry where shared components are stored.
@@ -66,7 +63,7 @@ import java.util.concurrent.ConcurrentMap;
 @ThreadSafe
 public class GlobalComponentRegistry extends AbstractComponentRegistry {
 
-   private static final Log log = LogFactory.getLog(GlobalComponentRegistry.class);
+   private static final ALogger log = LogFactory.getLog(GlobalComponentRegistry.class);
    private static volatile boolean versionLogged = false;
    /**
     * Hook to shut down the cache when the JVM exits.
@@ -120,7 +117,7 @@ public class GlobalComponentRegistry extends AbstractComponentRegistry {
          registerComponent(this, GlobalComponentRegistry.class);
          registerComponent(configuration, GlobalConfiguration.class);
          registerComponent(cacheManager, EmbeddedCacheManager.class);
-         registerComponent(new CacheManagerJmxRegistration(), CacheManagerJmxRegistration.class);
+//         registerComponent(new CacheManagerJmxRegistration(), CacheManagerJmxRegistration.class);
          registerComponent(new CacheManagerNotifierImpl(), CacheManagerNotifier.class);
 
          moduleProperties.loadModuleCommandHandlers(configuredClassLoader);
@@ -141,7 +138,7 @@ public class GlobalComponentRegistry extends AbstractComponentRegistry {
    }
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 
@@ -157,13 +154,14 @@ public class GlobalComponentRegistry extends AbstractComponentRegistry {
 
    @Override
    protected synchronized void addShutdownHook() {
-      ArrayList<MBeanServer> al = MBeanServerFactory.findMBeanServer(null);
+//      ArrayList<MBeanServer> al = MBeanServerFactory.findMBeanServer(null);
       ShutdownHookBehavior shutdownHookBehavior = globalConfiguration.shutdown().hookBehavior();
-      boolean registerShutdownHook = (shutdownHookBehavior == ShutdownHookBehavior.DEFAULT && al.isEmpty())
+//      boolean registerShutdownHook = (shutdownHookBehavior == ShutdownHookBehavior.DEFAULT && al.isEmpty())
+      boolean registerShutdownHook = (shutdownHookBehavior == ShutdownHookBehavior.DEFAULT)
             || shutdownHookBehavior == ShutdownHookBehavior.REGISTER;
 
       if (registerShutdownHook) {
-         log.tracef("Registering a shutdown hook.  Configured behavior = %s", shutdownHookBehavior);
+         log.trace("Registering a shutdown hook.  Configured behavior = " + shutdownHookBehavior);
          shutdownHook = new Thread() {
             @Override
             public void run() {
@@ -179,7 +177,7 @@ public class GlobalComponentRegistry extends AbstractComponentRegistry {
          Runtime.getRuntime().addShutdownHook(shutdownHook);
       } else {
 
-         log.tracef("Not registering a shutdown hook.  Configured behavior = %s", shutdownHookBehavior);
+         log.trace("Not registering a shutdown hook.  Configured behavior = " + shutdownHookBehavior);
       }
    }
 
@@ -218,7 +216,7 @@ public class GlobalComponentRegistry extends AbstractComponentRegistry {
          super.start();
 
          if (!versionLogged) {
-            log.version(Version.printVersion());
+            log.info("Infinispan version: %s");
             versionLogged = true;
          }
 

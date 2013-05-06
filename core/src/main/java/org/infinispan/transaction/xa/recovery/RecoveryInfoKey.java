@@ -22,7 +22,8 @@
  */
 package org.infinispan.transaction.xa.recovery;
 
-import javax.transaction.xa.Xid;
+import org.transaction.xa.Xid;
+
 
 /**
  * This makes sure that only xids pertaining to a certain cache are being returned when needed. This is required as the

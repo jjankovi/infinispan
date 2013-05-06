@@ -22,6 +22,10 @@
  */
 package org.infinispan;
 
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.List;
+
 import org.infinispan.atomic.Delta;
 import org.infinispan.batch.BatchContainer;
 import org.infinispan.container.DataContainer;
@@ -32,14 +36,10 @@ import org.infinispan.eviction.EvictionManager;
 import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.interceptors.base.CommandInterceptor;
 import org.infinispan.remoting.rpc.RpcManager;
-import org.infinispan.util.concurrent.locks.LockManager;
 import org.infinispan.stats.Stats;
-
-import javax.transaction.TransactionManager;
-import javax.transaction.xa.XAResource;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.List;
+import org.infinispan.util.concurrent.locks.LockManager;
+import org.transaction.TransactionManager;
+import org.transaction.xa.XAResource;
 
 /**
  * Similar to {@link org.infinispan.AbstractDelegatingCache}, but for {@link AdvancedCache}.

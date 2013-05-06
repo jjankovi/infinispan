@@ -22,6 +22,19 @@
  */
 package org.infinispan.remoting.rpc;
 
+import static org.infinispan.factories.KnownComponentNames.ASYNC_TRANSPORT_EXECUTOR;
+
+import java.text.NumberFormat;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.infinispan.Cache;
 import org.infinispan.CacheException;
 import org.infinispan.commands.CommandsFactory;
@@ -36,16 +49,15 @@ import org.infinispan.factories.annotations.Start;
 import org.infinispan.jmx.annotations.MBean;
 import org.infinispan.jmx.annotations.ManagedAttribute;
 import org.infinispan.jmx.annotations.ManagedOperation;
-import org.infinispan.statetransfer.StateTransferManager;
 import org.infinispan.remoting.ReplicationQueue;
 import org.infinispan.remoting.RpcException;
-import org.infinispan.remoting.responses.IgnoreExtraResponsesValidityFilter;
 import org.infinispan.remoting.responses.Response;
 import org.infinispan.remoting.transport.Address;
 import org.infinispan.remoting.transport.Transport;
+import org.infinispan.statetransfer.StateTransferManager;
 import org.infinispan.topology.LocalTopologyManager;
 import org.infinispan.util.concurrent.NotifyingNotifiableFuture;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 import org.rhq.helpers.pluginAnnotations.agent.DataType;
 import org.rhq.helpers.pluginAnnotations.agent.DisplayType;
@@ -54,19 +66,6 @@ import org.rhq.helpers.pluginAnnotations.agent.Metric;
 import org.rhq.helpers.pluginAnnotations.agent.Operation;
 import org.rhq.helpers.pluginAnnotations.agent.Parameter;
 import org.rhq.helpers.pluginAnnotations.agent.Units;
-
-import java.text.NumberFormat;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static org.infinispan.factories.KnownComponentNames.ASYNC_TRANSPORT_EXECUTOR;
 
 /**
  * This component really is just a wrapper around a {@link org.infinispan.remoting.transport.Transport} implementation,
@@ -81,7 +80,7 @@ import static org.infinispan.factories.KnownComponentNames.ASYNC_TRANSPORT_EXECU
 @MBean(objectName = "RpcManager", description = "Manages all remote calls to remote cache instances in the cluster.")
 public class RpcManagerImpl implements RpcManager {
 
-   private static final Log log = LogFactory.getLog(RpcManagerImpl.class);
+   private static final ALogger log = LogFactory.getLog(RpcManagerImpl.class);
    private static final boolean trace = log.isTraceEnabled();
 
    private Transport t;
@@ -147,7 +146,7 @@ public class RpcManagerImpl implements RpcManager {
 
       List<Address> clusterMembers = t.getMembers();
       if (clusterMembers.size() < 2) {
-         log.tracef("We're the only member in the cluster; Don't invoke remotely.");
+         log.trace("We're the only member in the cluster; Don't invoke remotely.");
          return Collections.emptyMap();
       } else {
          long startTimeNanos = 0;
@@ -182,7 +181,7 @@ public class RpcManagerImpl implements RpcManager {
             if (statisticsEnabled) replicationFailures.incrementAndGet();
             throw e;
          } catch (Throwable th) {
-            log.unexpectedErrorReplicating(th);
+            log.error("Unexpected error while replicating", th);
             if (statisticsEnabled) replicationFailures.incrementAndGet();
             throw new CacheException(th);
          } finally {
@@ -244,7 +243,7 @@ public class RpcManagerImpl implements RpcManager {
    }
 
    private Map<Address, Response> invokeRemotely(Collection<Address> recipients, ReplicableCommand rpc, boolean sync, boolean usePriorityQueue, long timeout, ResponseMode responseMode) {
-      if (trace) log.tracef("%s broadcasting call %s to recipient list %s", t.getAddress(), rpc, recipients);
+      if (trace) log.trace(t.getAddress() + " broadcasting call " + rpc + " to recipient list " +  recipients);
 
       if (useReplicationQueue(sync)) {
          replicationQueue.add(rpc);
@@ -254,7 +253,7 @@ public class RpcManagerImpl implements RpcManager {
             rpc = cf.buildSingleRpcCommand(rpc);
          }
          Map<Address, Response> rsps = invokeRemotely(recipients, rpc, responseMode, timeout, usePriorityQueue);
-         if (trace) log.tracef("Response(s) to %s is %s", rpc, rsps);
+         if (trace) log.trace("Response(s) to " + rpc + " is " + rsps);
          if (sync) checkResponses(rsps);
          return rsps;
       }
@@ -279,7 +278,7 @@ public class RpcManagerImpl implements RpcManager {
    public void invokeRemotelyInFuture(final Collection<Address> recipients, final ReplicableCommand rpc,
                                       final boolean usePriorityQueue, final NotifyingNotifiableFuture<Object> l,
                                       final long timeout, final boolean ignoreLeavers) {
-      if (trace) log.tracef("%s invoking in future call %s to recipient list %s", t.getAddress(), rpc, recipients);
+      if (trace) log.trace(t.getAddress() + " invoking in future call " + rpc + " to recipient list " + recipients);
       final ResponseMode responseMode = ignoreLeavers ? ResponseMode.SYNCHRONOUS_IGNORE_LEAVERS : ResponseMode.SYNCHRONOUS;
       final CountDownLatch futureSet = new CountDownLatch(1);
       Callable<Object> c = new Callable<Object>() {
@@ -323,7 +322,7 @@ public class RpcManagerImpl implements RpcManager {
             if (rsp != null && rsp.getValue() instanceof Throwable) {
                Throwable throwable = (Throwable) rsp.getValue();
                if (trace)
-                  log.tracef("Received Throwable from remote node %s", throwable, rsp.getKey());
+                  log.trace("Received Throwable from remote node " +  rsp.getKey(), throwable);
                throw new RpcException(throwable);
             }
          }

@@ -22,17 +22,6 @@
  */
 package org.infinispan.util;
 
-import org.infinispan.commands.ReplicableCommand;
-import org.infinispan.commands.module.ExtendedModuleCommandFactory;
-import org.infinispan.commands.module.ModuleCommandExtensions;
-import org.infinispan.commands.module.ModuleCommandFactory;
-import org.infinispan.commands.module.ModuleCommandInitializer;
-import org.infinispan.commands.remote.CacheRpcCommand;
-import org.infinispan.factories.components.ModuleMetadataFileFinder;
-import org.infinispan.lifecycle.ModuleLifecycle;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,6 +31,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
+
+import org.infinispan.commands.ReplicableCommand;
+import org.infinispan.commands.module.ExtendedModuleCommandFactory;
+import org.infinispan.commands.module.ModuleCommandExtensions;
+import org.infinispan.commands.module.ModuleCommandFactory;
+import org.infinispan.commands.module.ModuleCommandInitializer;
+import org.infinispan.commands.remote.CacheRpcCommand;
+import org.infinispan.factories.components.ModuleMetadataFileFinder;
+import org.infinispan.lifecycle.ModuleLifecycle;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * The <code>ModuleProperties</code> class represents Infinispan's module service extensions
@@ -55,7 +55,7 @@ public class ModuleProperties extends Properties {
 
    private static final long serialVersionUID = 2558131508076199744L;
 
-   private static final Log log = LogFactory.getLog(ModuleProperties.class);
+   private static final ALogger log = LogFactory.getLog(ModuleProperties.class);
 
    private Map<Byte, ModuleCommandFactory> commandFactories;
    private Map<Byte, ModuleCommandInitializer> commandInitializers;
@@ -68,12 +68,12 @@ public class ModuleProperties extends Properties {
       if (moduleLifecycleLoader.iterator().hasNext()) {
          List<ModuleLifecycle> lifecycles = new LinkedList<ModuleLifecycle>();
          for (ModuleLifecycle lifecycle : moduleLifecycleLoader) {
-            log.debugf("Loading lifecycle SPI class: %s", lifecycle);
+            log.debug("Loading lifecycle SPI class: " + lifecycle);
             lifecycles.add(lifecycle);
          }
          return lifecycles;
       } else {
-         log.debugf("No module lifecycle SPI classes available");
+         log.debug("No module lifecycle SPI classes available");
          return Collections.emptyList();
       }
    }
@@ -97,7 +97,7 @@ public class ModuleProperties extends Properties {
          commandInitializers = new HashMap<Byte, ModuleCommandInitializer>(1);
          moduleCommands = new HashSet<Class<? extends ReplicableCommand>>(1);
          for (ModuleCommandExtensions extension : moduleCmdExtLoader) {
-            log.debugf("Loading module command extension SPI class: %s", extension);
+            log.debug("Loading module command extension SPI class: " + extension);
             ExtendedModuleCommandFactory cmdFactory = extension.getModuleCommandFactory();
             ModuleCommandInitializer cmdInitializer = extension.getModuleCommandInitializer();
             for (Map.Entry<Byte, Class<? extends ReplicableCommand>> command :
@@ -114,7 +114,7 @@ public class ModuleProperties extends Properties {
             }
          }
       } else {
-         log.debugf("No module command extensions to load");
+         log.debug("No module command extensions to load");
          commandInitializers = Collections.emptyMap();
          commandFactories = Collections.emptyMap();
       }

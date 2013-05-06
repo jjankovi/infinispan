@@ -22,20 +22,6 @@
  */
 package org.infinispan.loaders.file;
 
-import org.infinispan.Cache;
-import org.infinispan.config.ConfigurationException;
-import org.infinispan.io.ExposedByteArrayOutputStream;
-import org.infinispan.loaders.CacheLoaderConfig;
-import org.infinispan.loaders.CacheLoaderException;
-import org.infinispan.loaders.CacheLoaderMetadata;
-import org.infinispan.loaders.bucket.Bucket;
-import org.infinispan.loaders.bucket.BucketBasedCacheStore;
-import org.infinispan.marshall.StreamingMarshaller;
-import org.infinispan.util.Util;
-import org.infinispan.util.concurrent.ConcurrentMapFactory;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -57,6 +43,20 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.infinispan.Cache;
+import org.infinispan.config.ConfigurationException;
+import org.infinispan.io.ExposedByteArrayOutputStream;
+import org.infinispan.loaders.CacheLoaderConfig;
+import org.infinispan.loaders.CacheLoaderException;
+import org.infinispan.loaders.CacheLoaderMetadata;
+import org.infinispan.loaders.bucket.Bucket;
+import org.infinispan.loaders.bucket.BucketBasedCacheStore;
+import org.infinispan.marshall.StreamingMarshaller;
+import org.infinispan.util.Util;
+import org.infinispan.util.concurrent.ConcurrentMapFactory;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
+
 /**
  * A filesystem-based implementation of a {@link org.infinispan.loaders.bucket.BucketBasedCacheStore}.  This file store
  * stores stuff in the following format: <tt>/{location}/cache name/bucket_number.bucket</tt>
@@ -71,7 +71,7 @@ import java.util.concurrent.TimeUnit;
 @CacheLoaderMetadata(configurationClass = FileCacheStoreConfig.class)
 public class FileCacheStore extends BucketBasedCacheStore {
 
-   static final Log log = LogFactory.getLog(FileCacheStore.class);
+   static final ALogger log = LogFactory.getLog(FileCacheStore.class);
    private static final boolean trace = log.isTraceEnabled();
    private int streamBufferSize;
 
@@ -166,7 +166,7 @@ public class FileCacheStore extends BucketBasedCacheStore {
             FileInputStream fileInStream = null;
             try {
                if (trace) {
-                  log.tracef("Opening file in %s", file);
+                  log.trace("Opening file in " + file);
                }
                fileInStream = new FileInputStream(file);
                int sz = fileInStream.available();
@@ -201,7 +201,7 @@ public class FileCacheStore extends BucketBasedCacheStore {
       for (File f : toDelete) {
          deleteFile(f);
          if (f.exists()) {
-            log.problemsRemovingFile(f);
+            log.warn("Had problems removing file " + f);
          }
       }
    }
@@ -267,7 +267,7 @@ public class FileCacheStore extends BucketBasedCacheStore {
       } catch (InterruptedException ie) {
          interrupted = true;
       } catch (CacheLoaderException e) {
-         log.problemsPurgingFile(bucketFile, e);
+         log.warn("Problems purging file " + bucketFile, e);
       } finally {
          unlock(bucketKey);
       }
@@ -307,7 +307,7 @@ public class FileCacheStore extends BucketBasedCacheStore {
          } catch (InterruptedException ie) {
             throw ie;
          } catch (Exception e) {
-            log.errorReadingFromFile(bucketFile.getAbsoluteFile(), e);
+            log.error("Error while reading from file: " + bucketFile.getAbsoluteFile(), e);
             throw new CacheLoaderException("Error while reading from file", e);
          } finally {
             safeClose(is);
@@ -324,9 +324,9 @@ public class FileCacheStore extends BucketBasedCacheStore {
       File f = new File(root, b.getBucketIdAsString());
       if (f.exists()) {
          if (!purgeFile(f)) {
-            log.problemsRemovingFile(f);
+            log.warn("Had problems removing file %" + f);
          } else if (trace) {
-            log.tracef("Successfully deleted file: '%s'", f.getName());
+            log.trace("Successfully deleted file: '" + f.getName() + "'");
          }
       }
 
@@ -335,7 +335,7 @@ public class FileCacheStore extends BucketBasedCacheStore {
             byte[] bytes = marshaller.objectToByteBuffer(b);
             fileSync.write(bytes, f);
          } catch (IOException ex) {
-            log.errorSavingBucket(b, ex);
+            log.error("Exception while saving bucket " + b, ex);
             throw new CacheLoaderException(ex);
          } catch (InterruptedException ie) {
             if (trace) {
@@ -362,7 +362,7 @@ public class FileCacheStore extends BucketBasedCacheStore {
       root = new File(location);
       if (!root.exists()) {
          if (!root.mkdirs()) {
-            log.problemsCreatingDirectory(root);
+            log.warn("Problems creating the directory: " + root);
          }
       }
       if (!root.exists()) {
@@ -383,7 +383,7 @@ public class FileCacheStore extends BucketBasedCacheStore {
             break;
       }
 
-      log.debugf("Using %s file sync mode", fsyncMode);
+      log.debug("Using " + fsyncMode + " file sync mode");
    }
 
    @Override
@@ -398,14 +398,14 @@ public class FileCacheStore extends BucketBasedCacheStore {
 
    private void deleteFile(File f) {
       if (trace) {
-         log.tracef("Really delete file %s", f);
+         log.trace("Really delete file " + f);
       }
       fileSync.deleteFile(f);
    }
 
    private boolean purgeFile(File f) {
       if (trace) {
-         log.tracef("Really clear file %s", f);
+         log.trace("Really clear file " + f);
       }
       try {
          fileSync.purge(f);
@@ -589,7 +589,7 @@ public class FileCacheStore extends BucketBasedCacheStore {
             try {
                channel.force(true);
             } catch (IOException e) {
-               log.errorFlushingToFileChannel(channel, e);
+               log.error("Error flushing to file: " + channel, e);
             }
             Util.close(channel);
          }
@@ -610,13 +610,13 @@ public class FileCacheStore extends BucketBasedCacheStore {
             public void run() {
                for (Map.Entry<String, FileChannel> entry : streams.entrySet()) {
                   if (trace)
-                     log.tracef("Flushing channel in %s", entry.getKey());
+                     log.trace("Flushing channel in " +  entry.getKey());
                   FileChannel channel = entry.getValue();
                   try {
                      channel.force(true);
                   } catch (IOException e) {
                      if (trace)
-                        log.tracef(e, "Error flushing output stream for %s", entry.getKey());
+                        log.trace("Error flushing output stream for " +  entry.getKey(), e);
                      flushErrors.putIfAbsent(entry.getKey(), e);
                      // If an error is encountered, close it. Next time it's used,
                      // the exception will be propagated back to the user.
@@ -694,14 +694,16 @@ public class FileCacheStore extends BucketBasedCacheStore {
          int l = name.length();
          int s = name.charAt(0) == '-' ? 1 : 0;
          if (l - s > 10) {
-            log.cacheLoaderIgnoringUnexpectedFile(dir, name);
+            log.warn("FileCacheStore ignored an unexpected file " + dir + " in path " + name + ". " +
+            		"The store path should be dedicated!");
             return false;
          }
          for (int i = s; i < l; i++) {
             char c = name.charAt(i);
             if (c < '0' || c > '9') {
-               log.cacheLoaderIgnoringUnexpectedFile(dir, name);
-               return false;
+            	log.warn("FileCacheStore ignored an unexpected file " + dir + " in path " + name + ". " +
+                		"The store path should be dedicated!");
+            	return false;
             }
          }
          return true;

@@ -22,7 +22,13 @@
  */
 package org.infinispan.eviction;
 
+import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 import net.jcip.annotations.ThreadSafe;
+
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.container.DataContainer;
@@ -38,17 +44,12 @@ import org.infinispan.loaders.CacheLoaderManager;
 import org.infinispan.loaders.CacheStore;
 import org.infinispan.notifications.cachelistener.CacheNotifier;
 import org.infinispan.util.Util;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 @ThreadSafe
 public class EvictionManagerImpl implements EvictionManager {
-   private static final Log log = LogFactory.getLog(EvictionManagerImpl.class);
+   private static final ALogger log = LogFactory.getLog(EvictionManagerImpl.class);
    private static final boolean trace = log.isTraceEnabled();
    ScheduledFuture <?> evictionTask;
 
@@ -94,7 +95,7 @@ public class EvictionManagerImpl implements EvictionManager {
          // Set up the eviction timer task
          long expWakeUpInt = configuration.expiration().wakeUpInterval();
          if (expWakeUpInt <= 0) {
-            log.notStartingEvictionThread();
+            log.info("wakeUpInterval is <= 0, not starting expired purge thread");
          } else {
             evictionTask = executor.scheduleWithFixedDelay(new ScheduledTask(),
                   expWakeUpInt, expWakeUpInt, TimeUnit.MILLISECONDS);
@@ -113,10 +114,11 @@ public class EvictionManagerImpl implements EvictionManager {
             }
             dataContainer.purgeExpired();
             if (trace) {
-               log.tracef("Purging data container completed in %s", Util.prettyPrintTime(System.nanoTime() - start, TimeUnit.NANOSECONDS));
+               log.trace("Purging data container completed in " + 
+            		   Util.prettyPrintTime(System.nanoTime() - start, TimeUnit.NANOSECONDS));
             }
          } catch (Exception e) {
-            log.exceptionPurgingDataContainer(e);
+            log.warn("Caught exception purging data container!", e);
          }
       }
 
@@ -129,10 +131,11 @@ public class EvictionManagerImpl implements EvictionManager {
                }
                cacheStore.purgeExpired();
                if (trace) {
-                  log.tracef("Purging cache store completed in %s", Util.prettyPrintTime(System.nanoTime() - start, TimeUnit.NANOSECONDS));
+                  log.trace("Purging cache store completed in " + 
+                		  Util.prettyPrintTime(System.nanoTime() - start, TimeUnit.NANOSECONDS));
                }
             } catch (Exception e) {
-               log.exceptionPurgingDataContainer(e);
+            	log.warn("Caught exception purging data container!", e);
             }
          }
       }

@@ -22,6 +22,12 @@
  */
 package org.infinispan.commands;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+
 import org.infinispan.Cache;
 import org.infinispan.atomic.Delta;
 import org.infinispan.commands.control.LockControlCommand;
@@ -72,28 +78,22 @@ import org.infinispan.factories.annotations.ComponentName;
 import org.infinispan.factories.annotations.Inject;
 import org.infinispan.factories.annotations.Start;
 import org.infinispan.interceptors.InterceptorChain;
-import org.infinispan.statetransfer.StateProvider;
-import org.infinispan.statetransfer.StateConsumer;
-import org.infinispan.statetransfer.StateRequestCommand;
-import org.infinispan.statetransfer.StateResponseCommand;
-import org.infinispan.statetransfer.StateChunk;
 import org.infinispan.notifications.cachelistener.CacheNotifier;
 import org.infinispan.remoting.transport.Address;
+import org.infinispan.statetransfer.StateChunk;
+import org.infinispan.statetransfer.StateConsumer;
+import org.infinispan.statetransfer.StateProvider;
+import org.infinispan.statetransfer.StateRequestCommand;
+import org.infinispan.statetransfer.StateResponseCommand;
 import org.infinispan.transaction.RemoteTransaction;
 import org.infinispan.transaction.TransactionTable;
 import org.infinispan.transaction.xa.DldGlobalTransaction;
 import org.infinispan.transaction.xa.GlobalTransaction;
 import org.infinispan.transaction.xa.recovery.RecoveryManager;
 import org.infinispan.util.concurrent.locks.LockManager;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.xa.Xid;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
+import org.transaction.xa.Xid;
 
 /**
  * @author Mircea.Markus@jboss.com
@@ -103,7 +103,7 @@ import java.util.concurrent.Callable;
  */
 public class CommandsFactoryImpl implements CommandsFactory {
 
-   private static final Log log = LogFactory.getLog(CommandsFactoryImpl.class);
+   private static final ALogger log = LogFactory.getLog(CommandsFactoryImpl.class);
    private static final boolean trace = log.isTraceEnabled();
 
 
@@ -434,7 +434,7 @@ public class CommandsFactoryImpl implements CommandsFactory {
             if (mci != null) {
                mci.initializeReplicableCommand(c, isRemote);
             } else {
-               if (trace) log.tracef("Nothing to initialize for command: %s", c);
+               if (trace) log.trace("Nothing to initialize for command: " + c);
             }
       }
    }

@@ -23,18 +23,18 @@
 
 package org.infinispan.util;
 
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachemanagerlistener.annotation.ViewChanged;
 import org.infinispan.notifications.cachemanagerlistener.event.ViewChangedEvent;
 import org.infinispan.remoting.transport.Address;
 import org.infinispan.remoting.transport.Transport;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This class generates ids guaranteed to be unique cluster wide.
@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ClusterIdGenerator {
 
-   private static final Log log = LogFactory.getLog(ClusterIdGenerator.class);
+   private static final ALogger log = LogFactory.getLog(ClusterIdGenerator.class);
 
    // TODO: Possibly seed version counter on capped System.currentTimeMillis, to avoid issues with clients holding to versions in between restarts
    private final AtomicInteger versionCounter = new AtomicInteger();
@@ -99,7 +99,7 @@ public class ClusterIdGenerator {
          long rank = ClusterIdGenerator.this
             .calculateRank(e.getLocalAddress(), e.getNewMembers(), e.getViewId());
          if (log.isTraceEnabled())
-            log.tracef("Calculated rank based on view %s and result was %d", e, rank);
+            log.trace("Calculated rank based on view " + e + " and result was " + rank);
       }
 
    }

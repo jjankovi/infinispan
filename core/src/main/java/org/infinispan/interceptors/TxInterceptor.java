@@ -22,6 +22,8 @@
  */
 package org.infinispan.interceptors;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.infinispan.commands.FlagAffectedCommand;
 import org.infinispan.commands.VisitableCommand;
 import org.infinispan.commands.control.LockControlCommand;
@@ -50,7 +52,7 @@ import org.infinispan.jmx.annotations.ManagedOperation;
 import org.infinispan.transaction.LocalTransaction;
 import org.infinispan.transaction.TransactionCoordinator;
 import org.infinispan.transaction.TransactionTable;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 import org.rhq.helpers.pluginAnnotations.agent.DataType;
 import org.rhq.helpers.pluginAnnotations.agent.DisplayType;
@@ -58,11 +60,9 @@ import org.rhq.helpers.pluginAnnotations.agent.MeasurementType;
 import org.rhq.helpers.pluginAnnotations.agent.Metric;
 import org.rhq.helpers.pluginAnnotations.agent.Operation;
 import org.rhq.helpers.pluginAnnotations.agent.Parameter;
-
-import javax.transaction.Status;
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
-import java.util.concurrent.atomic.AtomicLong;
+import org.transaction.Status;
+import org.transaction.SystemException;
+import org.transaction.Transaction;
 
 /**
  * Interceptor in charge with handling transaction related operations, e.g enlisting cache as an transaction
@@ -85,10 +85,10 @@ public class TxInterceptor extends CommandInterceptor {
    private boolean statisticsEnabled;
    protected TransactionCoordinator txCoordinator;
 
-   private static final Log log = LogFactory.getLog(TxInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(TxInterceptor.class);
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 

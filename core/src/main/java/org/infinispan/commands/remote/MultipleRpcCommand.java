@@ -22,15 +22,15 @@
  */
 package org.infinispan.commands.remote;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.infinispan.commands.ReplicableCommand;
 import org.infinispan.commands.VisitableCommand;
 import org.infinispan.commands.tx.TransactionBoundaryCommand;
 import org.infinispan.context.InvocationContext;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Command that implements cluster replication logic.
@@ -46,7 +46,7 @@ public class MultipleRpcCommand extends BaseRpcInvokingCommand {
 
    public static final byte COMMAND_ID = 2;
 
-   private static final Log log = LogFactory.getLog(MultipleRpcCommand.class);
+   private static final ALogger log = LogFactory.getLog(MultipleRpcCommand.class);
    private static final boolean trace = log.isTraceEnabled();
 
    private ReplicableCommand[] commands;
@@ -69,7 +69,7 @@ public class MultipleRpcCommand extends BaseRpcInvokingCommand {
     */
    @Override
    public Object perform(InvocationContext ctx) throws Throwable {
-      if (trace) log.tracef("Executing remotely originated commands: %d", commands.length);
+      if (trace) log.trace("Executing remotely originated commands: " + commands.length);
       for (ReplicableCommand command : commands) {
          if (command instanceof TransactionBoundaryCommand) {
             command.perform(null);

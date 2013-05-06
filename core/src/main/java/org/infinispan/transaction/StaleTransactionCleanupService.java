@@ -23,21 +23,6 @@
 
 package org.infinispan.transaction;
 
-import org.infinispan.commands.control.LockControlCommand;
-import org.infinispan.commands.tx.RollbackCommand;
-import org.infinispan.context.Flag;
-import org.infinispan.distribution.ch.ConsistentHash;
-import org.infinispan.interceptors.InterceptorChain;
-import org.infinispan.notifications.Listener;
-import org.infinispan.notifications.cachelistener.annotation.TopologyChanged;
-import org.infinispan.notifications.cachelistener.event.TopologyChangedEvent;
-import org.infinispan.remoting.MembershipArithmetic;
-import org.infinispan.remoting.rpc.RpcManager;
-import org.infinispan.remoting.transport.Address;
-import org.infinispan.transaction.xa.GlobalTransaction;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -50,6 +35,21 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.infinispan.commands.control.LockControlCommand;
+import org.infinispan.commands.tx.RollbackCommand;
+import org.infinispan.context.Flag;
+import org.infinispan.distribution.ch.ConsistentHash;
+import org.infinispan.interceptors.InterceptorChain;
+import org.infinispan.notifications.Listener;
+import org.infinispan.notifications.cachelistener.annotation.TopologyChanged;
+import org.infinispan.notifications.cachelistener.event.TopologyChangedEvent;
+import org.infinispan.remoting.MembershipArithmetic;
+import org.infinispan.remoting.rpc.RpcManager;
+import org.infinispan.remoting.transport.Address;
+import org.infinispan.transaction.xa.GlobalTransaction;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
+
 /**
 * Class responsible of cleaning transactions from the transaction table when nodes leave the cluster.
 *
@@ -59,7 +59,7 @@ import java.util.concurrent.TimeUnit;
 @Listener
 public class StaleTransactionCleanupService {
 
-   private static Log log = LogFactory.getLog(StaleTransactionCleanupService.class);
+   private static ALogger log = LogFactory.getLog(StaleTransactionCleanupService.class);
 
 
    private TransactionTable transactionTable;
@@ -88,7 +88,7 @@ public class StaleTransactionCleanupService {
          if (consistentHashAtStart != null) {
             List<Address> leavers = MembershipArithmetic.getMembersLeft(consistentHashAtStart.getMembers(), tce.getConsistentHashAtEnd().getMembers());
             if (!leavers.isEmpty()) {
-               log.tracef("Saw %d leavers - kicking off a lock breaking task", leavers.size());
+               log.trace("Saw " + leavers.size() + " leavers - kicking off a lock breaking task");
                cleanTxForWhichTheOwnerLeft(leavers);
             }
          }
@@ -107,7 +107,7 @@ public class StaleTransactionCleanupService {
 
       // for remote transactions, release locks for which we are no longer an owner
       // only for remote transactions, since we acquire locks on the origin node regardless if it's the owner or not
-      log.tracef("Unlocking keys for which we are no longer an owner");
+      log.trace("Unlocking keys for which we are no longer an owner");
       for (RemoteTransaction remoteTx : transactionTable.getRemoteTransactions()) {
          GlobalTransaction gtx = remoteTx.getGlobalTransaction();
          List<Object> keys = new ArrayList<Object>();
@@ -126,29 +126,29 @@ public class StaleTransactionCleanupService {
          }
 
          if (keys.size() > 0) {
-            log.tracef("Unlocking keys %s for remote transaction %s as we are no longer an owner", keys, gtx);
+            log.trace("Unlocking keys " + keys + " for remote transaction " + gtx + " as we are no longer an owner");
             Set<Flag> flags = EnumSet.of(Flag.CACHE_MODE_LOCAL);
             LockControlCommand unlockCmd = new LockControlCommand(keys, cacheName, flags, gtx);
             unlockCmd.init(invoker, transactionTable.icc, transactionTable);
             unlockCmd.setUnlock(true);
             try {
                unlockCmd.perform(null);
-               log.tracef("Unlocking moved keys for %s complete.", gtx);
+               log.trace("Unlocking moved keys for " + gtx + " complete.");
             } catch (Throwable t) {
-               log.unableToUnlockRebalancedKeys(gtx, keys, self, t);
+               log.error("Unable to unlock keys " + gtx + " for transaction " + keys + " after they were rebalanced off node " + self, t);
             }
          }
 
          // if the transaction doesn't touch local keys any more, we can roll it back
          if (!txHasLocalKeys) {
-            log.tracef("Killing remote transaction without any local keys %s", gtx);
+            log.trace("Killing remote transaction without any local keys " +  gtx);
             RollbackCommand rc = new RollbackCommand(cacheName, gtx);
             rc.init(invoker, transactionTable.icc, transactionTable);
             try {
                rc.perform(null);
-               log.tracef("Rollback of transaction %s complete.", gtx);
+               log.trace("Rollback of transaction " + gtx + " complete.");
             } catch (Throwable e) {
-               log.unableToRollbackGlobalTx(gtx, e);
+               log.warn("Unable to roll back global transaction " + gtx, e);
             } finally {
                transactionTable.removeRemoteTransaction(gtx);
             }

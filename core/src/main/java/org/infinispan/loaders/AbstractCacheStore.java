@@ -22,17 +22,6 @@
  */
 package org.infinispan.loaders;
 
-import org.infinispan.Cache;
-import org.infinispan.loaders.modifications.Modification;
-import org.infinispan.loaders.modifications.Remove;
-import org.infinispan.loaders.modifications.Store;
-import org.infinispan.marshall.StreamingMarshaller;
-import org.infinispan.transaction.xa.GlobalTransaction;
-import org.infinispan.util.concurrent.ConcurrentMapFactory;
-import org.infinispan.util.concurrent.WithinThreadExecutor;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
@@ -43,6 +32,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.infinispan.Cache;
+import org.infinispan.loaders.modifications.Modification;
+import org.infinispan.loaders.modifications.Remove;
+import org.infinispan.loaders.modifications.Store;
+import org.infinispan.marshall.StreamingMarshaller;
+import org.infinispan.transaction.xa.GlobalTransaction;
+import org.infinispan.util.concurrent.ConcurrentMapFactory;
+import org.infinispan.util.concurrent.WithinThreadExecutor;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
+
 /**
  * An abstract {@link org.infinispan.loaders.CacheStore} that holds common implementations for some methods
  *
@@ -52,7 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class AbstractCacheStore extends AbstractCacheLoader implements CacheStore {
 
-   private static final Log log = LogFactory.getLog(AbstractCacheStore.class);
+   private static final ALogger log = LogFactory.getLog(AbstractCacheStore.class);
 
    private Map<GlobalTransaction, List<? extends Modification>> transactions;
    private AbstractCacheStoreConfig config;
@@ -110,7 +110,7 @@ public abstract class AbstractCacheStore extends AbstractCacheLoader implements 
             try {
                purgeInternal();
             } catch (CacheLoaderException e) {
-               log.problemPurgingExpired(e);
+               log.error("Problems encountered while purging expired", e);
             }
          }
       });

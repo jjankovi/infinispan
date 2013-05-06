@@ -23,13 +23,13 @@
 
 package org.infinispan.statetransfer;
 
+import java.util.Collection;
+
 import org.infinispan.commands.remote.BaseRpcCommand;
 import org.infinispan.context.InvocationContext;
 import org.infinispan.remoting.transport.Address;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.Collection;
 
 /**
  * This command is used by a StateProvider to push cache entries to a StateConsumer.
@@ -39,7 +39,7 @@ import java.util.Collection;
  */
 public class StateResponseCommand extends BaseRpcCommand {
 
-   private static final Log log = LogFactory.getLog(StateResponseCommand.class);
+   private static final ALogger log = LogFactory.getLog(StateResponseCommand.class);
 
    public static final byte COMMAND_ID = 20;
 

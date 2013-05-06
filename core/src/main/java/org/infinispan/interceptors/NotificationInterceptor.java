@@ -27,9 +27,9 @@ import org.infinispan.commands.tx.PrepareCommand;
 import org.infinispan.commands.tx.RollbackCommand;
 import org.infinispan.context.impl.TxInvocationContext;
 import org.infinispan.factories.annotations.Inject;
-import org.infinispan.notifications.cachelistener.CacheNotifier;
 import org.infinispan.interceptors.base.CommandInterceptor;
-import org.infinispan.util.logging.Log;
+import org.infinispan.notifications.cachelistener.CacheNotifier;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -41,10 +41,10 @@ import org.infinispan.util.logging.LogFactory;
 public class NotificationInterceptor extends CommandInterceptor {
    private CacheNotifier notifier;
 
-   private static final Log log = LogFactory.getLog(NotificationInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(NotificationInterceptor.class);
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 

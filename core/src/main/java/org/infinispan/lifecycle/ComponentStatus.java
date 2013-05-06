@@ -22,7 +22,7 @@
  */
 package org.infinispan.lifecycle;
 
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -58,7 +58,7 @@ public enum ComponentStatus {
     */
    FAILED;
 
-   private static final Log log = LogFactory.getLog(ComponentStatus.class);
+   private static final ALogger log = LogFactory.getLog(ComponentStatus.class);
 
    public boolean needToDestroyFailedCache() {
       return this == ComponentStatus.FAILED;

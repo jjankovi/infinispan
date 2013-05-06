@@ -23,31 +23,31 @@
 package org.infinispan.transaction.tm;
 
 
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.HeuristicMixedException;
-import javax.transaction.HeuristicRollbackException;
-import javax.transaction.RollbackException;
-import javax.transaction.Status;
-import javax.transaction.Synchronization;
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
-import javax.transaction.xa.XAException;
-import javax.transaction.xa.XAResource;
-import javax.transaction.xa.Xid;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
+import org.transaction.HeuristicMixedException;
+import org.transaction.HeuristicRollbackException;
+import org.transaction.RollbackException;
+import org.transaction.Status;
+import org.transaction.Synchronization;
+import org.transaction.SystemException;
+import org.transaction.Transaction;
+import org.transaction.xa.XAException;
+import org.transaction.xa.XAResource;
+import org.transaction.xa.Xid;
+
 /**
  * @author bela
  * @since 4.0
  */
 public class DummyTransaction implements Transaction {
-   private static final Log log = LogFactory.getLog(DummyTransaction.class);
+   private static final ALogger log = LogFactory.getLog(DummyTransaction.class);
    private static boolean trace = log.isTraceEnabled();
 
    private volatile int status = Status.STATUS_UNKNOWN;
@@ -110,7 +110,7 @@ public class DummyTransaction implements Transaction {
          status = Status.STATUS_ROLLEDBACK;
          notifyAfterCompletion(Status.STATUS_ROLLEDBACK);
       } catch (Throwable t) {
-         log.errorRollingBack(t);
+         log.error("Exception while rollback", t);
          throw new IllegalStateException(t);
       }
       // Disassociate tx from thread.
@@ -155,7 +155,7 @@ public class DummyTransaction implements Transaction {
       try {
          xaRes.start(xid, 0);
       } catch (XAException e) {
-         log.errorEnlistingResource(e);
+         log.error("Error enlisting resource", e);
          throw new SystemException(e.getMessage());
       }
       return true;
@@ -215,7 +215,7 @@ public class DummyTransaction implements Transaction {
       }
 
       if (trace) {
-         log.tracef("registering synchronization handler %s", sync);
+         log.trace("registering synchronization handler " + sync);
       }
       syncs.add(sync);
 
@@ -225,13 +225,13 @@ public class DummyTransaction implements Transaction {
       boolean retval = true;
       if (syncs == null) return true;
       for (Synchronization s : syncs) {
-         if (trace) log.tracef("processing beforeCompletion for %s", s);
+         if (trace) log.trace("processing beforeCompletion for " + s);
          try {
             s.beforeCompletion();
          } catch (Throwable t) {
             retval = false;
             status = Status.STATUS_MARKED_ROLLBACK;
-            log.beforeCompletionFailed(s, t);
+            log.error("beforeCompletion() failed for " + s, t);
          }
       }
       return retval;
@@ -258,7 +258,7 @@ public class DummyTransaction implements Transaction {
             status = Status.STATUS_ROLLING_BACK;
             return false;
          } catch (Throwable th) {
-            log.unexpectedErrorFromResourceManager(th);
+            log.error("Unexpected error from resource manager!", th);
             throw new SystemException(th.getMessage());
          }
       }
@@ -279,12 +279,12 @@ public class DummyTransaction implements Transaction {
       if (syncs == null) return;
       for (Synchronization s : syncs) {
          if (trace) {
-            log.tracef("processing afterCompletion for %s", s);
+            log.trace("processing afterCompletion for " + s);
          }
          try {
             s.afterCompletion(status);
          } catch (Throwable t) {
-            log.afterCompletionFailed(s, t);
+            log.error("afterCompletion() failed for " + s, t);
          }
       }
       syncs.clear();
@@ -301,7 +301,7 @@ public class DummyTransaction implements Transaction {
          try {
             res.rollback(xid);
          } catch (XAException e) {
-            log.errorRollingBack(e);
+            log.error("Exception while rollback", e);
          }
       }
    }
@@ -320,7 +320,7 @@ public class DummyTransaction implements Transaction {
                   //we only do 2-phase commits
                   res.commit(xid, false);
                } catch (XAException e) {
-                  log.errorCommittingTx(e);
+                  log.warn("exception while committing", e);
                   throw new HeuristicMixedException(e.getMessage());
                }
             }

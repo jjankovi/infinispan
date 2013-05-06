@@ -22,10 +22,10 @@
  */
 package org.infinispan.util;
 
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.lang.reflect.Method;
+
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * Proxies is a collection of useful dynamic profixes. Internal use only.
@@ -68,7 +68,7 @@ public class Proxies {
     */
    static class CatchThrowableProxy implements java.lang.reflect.InvocationHandler {
 
-        private static final Log log = LogFactory.getLog(CatchThrowableProxy.class);
+        private static final ALogger log = LogFactory.getLog(CatchThrowableProxy.class);
 
         private Object obj;
 
@@ -87,7 +87,8 @@ public class Proxies {
             try {
                 result = m.invoke(obj, args);
             } catch (Throwable t) {
-                log.ignoringException(m.getName(), t.getMessage(), t.getCause());
+                log.warn("Invocation of " + m.getName() + " threw an exception " 
+                	+ t.getMessage() + ". Exception is ignored.", t);
             } finally {
             }
             return result;

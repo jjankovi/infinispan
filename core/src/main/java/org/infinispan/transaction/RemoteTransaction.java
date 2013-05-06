@@ -22,19 +22,19 @@
  */
 package org.infinispan.transaction;
 
-import org.infinispan.commands.write.WriteCommand;
-import org.infinispan.container.entries.CacheEntry;
-import org.infinispan.transaction.xa.GlobalTransaction;
-import org.infinispan.transaction.xa.InvalidTransactionException;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+
+import org.infinispan.commands.write.WriteCommand;
+import org.infinispan.container.entries.CacheEntry;
+import org.infinispan.transaction.xa.GlobalTransaction;
+import org.infinispan.transaction.xa.InvalidTransactionException;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * Defines the state of a remotely originated transaction.
@@ -44,7 +44,7 @@ import java.util.Map;
  */
 public class RemoteTransaction extends AbstractCacheTransaction implements Cloneable {
 
-   private static final Log log = LogFactory.getLog(RemoteTransaction.class);
+   private static final ALogger log = LogFactory.getLog(RemoteTransaction.class);
 
    private volatile boolean valid = true;
 
@@ -78,7 +78,7 @@ public class RemoteTransaction extends AbstractCacheTransaction implements Clone
          throw new InvalidTransactionException("This remote transaction " + getGlobalTransaction() + " is invalid");
       }
       if (log.isTraceEnabled()) {
-         log.tracef("Adding key %s to tx %s", key, getGlobalTransaction());
+         log.trace("Adding key " + key + " to tx " +  getGlobalTransaction());
       }
       lookedUpEntries.put(key, e);
    }
@@ -89,7 +89,7 @@ public class RemoteTransaction extends AbstractCacheTransaction implements Clone
          throw new InvalidTransactionException("This remote transaction " + getGlobalTransaction() + " is invalid");
       }
       if (log.isTraceEnabled()) {
-         log.tracef("Adding keys %s to tx %s", entries.keySet(), getGlobalTransaction());
+         log.trace("Adding keys " + entries.keySet() + " to tx " +  getGlobalTransaction());
       }
       lookedUpEntries.putAll(entries);
    }

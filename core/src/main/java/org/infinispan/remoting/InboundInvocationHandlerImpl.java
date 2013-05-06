@@ -31,13 +31,13 @@ import org.infinispan.factories.annotations.Inject;
 import org.infinispan.factories.scopes.Scope;
 import org.infinispan.factories.scopes.Scopes;
 import org.infinispan.manager.NamedCacheNotFoundException;
-import org.infinispan.statetransfer.StateTransferManager;
 import org.infinispan.remoting.responses.ExceptionResponse;
 import org.infinispan.remoting.responses.Response;
 import org.infinispan.remoting.responses.ResponseGenerator;
 import org.infinispan.remoting.transport.Address;
 import org.infinispan.remoting.transport.Transport;
-import org.infinispan.util.logging.Log;
+import org.infinispan.statetransfer.StateTransferManager;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -49,7 +49,7 @@ import org.infinispan.util.logging.LogFactory;
 @Scope(Scopes.GLOBAL)
 public class InboundInvocationHandlerImpl implements InboundInvocationHandler {
    private GlobalComponentRegistry gcr;
-   private static final Log log = LogFactory.getLog(InboundInvocationHandlerImpl.class);
+   private static final ALogger log = LogFactory.getLog(InboundInvocationHandlerImpl.class);
    private static final boolean trace = log.isTraceEnabled();
    private GlobalConfiguration globalConfiguration;
    private Transport transport;
@@ -71,11 +71,12 @@ public class InboundInvocationHandlerImpl implements InboundInvocationHandler {
 
       if (cr == null) {
          if (!globalConfiguration.transport().strictPeerToPeer()) {
-            if (trace) log.tracef("Strict peer to peer off, so silently ignoring that %s cache is not defined", cacheName);
+            if (trace) log.trace("Strict peer to peer off, so silently ignoring that " 
+            		+ cacheName + " cache is not defined");
             return null;
          }
 
-         log.namedCacheDoesNotExist(cacheName);
+         log.info("Cache named " + cacheName + " does not exist on this cache manager!");
          return new ExceptionResponse(new NamedCacheNotFoundException(cacheName, "Cache has not been started on node " + transport.getAddress()));
       }
 
@@ -90,7 +91,7 @@ public class InboundInvocationHandlerImpl implements InboundInvocationHandler {
       commandsFactory.initializeReplicableCommand(cmd, true);
 
       try {
-         if (trace) log.tracef("Calling perform() on %s", cmd);
+         if (trace) log.trace("Calling perform() on " + cmd);
          ResponseGenerator respGen = cr.getResponseGenerator();
          Object retval = cmd.perform(null);
          return respGen.getResponse(cmd, retval);
@@ -112,7 +113,7 @@ public class InboundInvocationHandlerImpl implements InboundInvocationHandler {
       // A null response is valid and OK ...
       if (trace && resp != null && !resp.isValid()) {
          // invalid response
-         log.tracef("Unable to execute command, got invalid response %s", resp);
+         log.trace("Unable to execute command, got invalid response " + resp);
       }
 
       return resp;

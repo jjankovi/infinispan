@@ -19,11 +19,6 @@
 
 package org.infinispan.factories.components;
 
-import org.infinispan.CacheException;
-import org.infinispan.factories.annotations.DefaultFactoryFor;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,6 +26,11 @@ import java.io.ObjectInputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.infinispan.CacheException;
+import org.infinispan.factories.annotations.DefaultFactoryFor;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * This is a repository of component metadata, which is populated when the Infinispan core jar is loaded up.  Actual
@@ -44,7 +44,7 @@ public class ComponentMetadataRepo {
    final Map<String, ComponentMetadata> componentMetadataMap = new HashMap<String, ComponentMetadata>(128);
    final Map<String, String> factories = new HashMap<String, String>(16);
    private final ComponentMetadata dependencyFreeComponent = new ComponentMetadata();
-   private static final Log log = LogFactory.getLog(ComponentMetadataRepo.class);
+   private static final ALogger log = LogFactory.getLog(ComponentMetadataRepo.class);
 
    @SuppressWarnings("unchecked")
    public synchronized void readMetadata(URL metadataFile) throws IOException, ClassNotFoundException {

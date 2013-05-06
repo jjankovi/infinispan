@@ -22,7 +22,8 @@
  */
 package org.infinispan.transaction.lookup;
 
-import javax.transaction.TransactionManager;
+import org.infinispan.config.Configuration;
+import org.transaction.TransactionManager;
 
 /**
  * Factory interface, allows {@link org.infinispan.Cache} to use different transactional systems. Names of implementors of

@@ -23,14 +23,14 @@
 
 package org.infinispan.statetransfer;
 
+import java.util.Set;
+
 import org.infinispan.CacheException;
 import org.infinispan.commands.remote.BaseRpcCommand;
 import org.infinispan.context.InvocationContext;
 import org.infinispan.remoting.transport.Address;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.Set;
 
 /**
  * This command is used by a StateConsumer to request transactions and cache entries from a StateProvider.
@@ -40,7 +40,7 @@ import java.util.Set;
  */
 public class StateRequestCommand extends BaseRpcCommand {
 
-   private static final Log log = LogFactory.getLog(StateRequestCommand.class);
+   private static final ALogger log = LogFactory.getLog(StateRequestCommand.class);
 
    public enum Type {
       GET_TRANSACTIONS,

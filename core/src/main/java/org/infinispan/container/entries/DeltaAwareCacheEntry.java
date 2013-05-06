@@ -22,19 +22,24 @@
  */
 package org.infinispan.container.entries;
 
+import static org.infinispan.container.entries.DeltaAwareCacheEntry.Flags.CHANGED;
+import static org.infinispan.container.entries.DeltaAwareCacheEntry.Flags.CREATED;
+import static org.infinispan.container.entries.DeltaAwareCacheEntry.Flags.EVICTED;
+import static org.infinispan.container.entries.DeltaAwareCacheEntry.Flags.LOCK_PLACEHOLDER;
+import static org.infinispan.container.entries.DeltaAwareCacheEntry.Flags.REMOVED;
+import static org.infinispan.container.entries.DeltaAwareCacheEntry.Flags.VALID;
+
+import java.util.LinkedList;
+import java.util.List;
+
 import org.infinispan.atomic.AtomicHashMap;
 import org.infinispan.atomic.Delta;
 import org.infinispan.atomic.DeltaAware;
 import org.infinispan.container.DataContainer;
 import org.infinispan.container.versioning.EntryVersion;
 import org.infinispan.util.Util;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.LinkedList;
-import java.util.List;
-
-import static org.infinispan.container.entries.DeltaAwareCacheEntry.Flags.*;
 
 /**
  * A wrapper around a cached entry that encapsulates DeltaAware and Delta semantics when writes are
@@ -44,7 +49,7 @@ import static org.infinispan.container.entries.DeltaAwareCacheEntry.Flags.*;
  * @since 5.1
  */
 public class DeltaAwareCacheEntry implements CacheEntry, StateChangingEntry {
-   private static final Log log = LogFactory.getLog(DeltaAwareCacheEntry.class);
+   private static final ALogger log = LogFactory.getLog(DeltaAwareCacheEntry.class);
    private static final boolean trace = log.isTraceEnabled();
 
    protected Object key;

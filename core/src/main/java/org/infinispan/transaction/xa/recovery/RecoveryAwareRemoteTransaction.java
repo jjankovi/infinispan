@@ -22,15 +22,15 @@
  */
 package org.infinispan.transaction.xa.recovery;
 
+import java.util.Collection;
+
 import org.infinispan.commands.write.WriteCommand;
 import org.infinispan.remoting.transport.Address;
-import org.infinispan.transaction.xa.GlobalTransaction;
 import org.infinispan.transaction.RemoteTransaction;
-import org.infinispan.util.logging.Log;
+import org.infinispan.transaction.xa.GlobalTransaction;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.Status;
-import java.util.Collection;
+import org.transaction.Status;
 
 /**
  * Extends {@link org.infinispan.transaction.RemoteTransaction} and adds recovery related information and functionality.
@@ -40,7 +40,7 @@ import java.util.Collection;
  */
 public class RecoveryAwareRemoteTransaction extends RemoteTransaction implements RecoveryAwareTransaction {
 
-   private static final Log log = LogFactory.getLog(RecoveryAwareRemoteTransaction.class);
+   private static final ALogger log = LogFactory.getLog(RecoveryAwareRemoteTransaction.class);
 
    private boolean prepared;
 
@@ -78,7 +78,7 @@ public class RecoveryAwareRemoteTransaction extends RemoteTransaction implements
     */
    public void computeOrphan(Collection<Address> leavers) {
       if (leavers.contains(getGlobalTransaction().getAddress())) {
-         if (log.isTraceEnabled()) log.tracef("This transaction's originator has left the cluster: %s", getGlobalTransaction());
+         if (log.isTraceEnabled()) log.trace("This transaction's originator has left the cluster: " + getGlobalTransaction());
          isOrphan = true;
       }
    }

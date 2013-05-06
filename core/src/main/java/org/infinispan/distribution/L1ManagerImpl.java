@@ -22,26 +22,7 @@
  */
 package org.infinispan.distribution;
 
-import org.infinispan.commands.CommandsFactory;
-import org.infinispan.commands.remote.CacheRpcCommand;
-import org.infinispan.commands.write.InvalidateCommand;
-import org.infinispan.context.Flag;
-import org.infinispan.factories.KnownComponentNames;
-import org.infinispan.factories.annotations.ComponentName;
-import org.infinispan.configuration.cache.Configuration;
-import org.infinispan.factories.annotations.Inject;
-import org.infinispan.factories.annotations.Start;
-import org.infinispan.factories.annotations.Stop;
-import org.infinispan.remoting.rpc.ResponseMode;
-import org.infinispan.remoting.rpc.RpcManager;
-import org.infinispan.remoting.transport.Address;
-import org.infinispan.util.concurrent.AggregatingNotifyingFutureImpl;
-import org.infinispan.util.concurrent.ConcurrentMapFactory;
-import org.infinispan.util.concurrent.NoOpFuture;
-import org.infinispan.util.concurrent.NotifyingFutureImpl;
-import org.infinispan.util.concurrent.NotifyingNotifiableFuture;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
+import static org.infinispan.factories.KnownComponentNames.ASYNC_TRANSPORT_EXECUTOR;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -56,11 +37,30 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static org.infinispan.factories.KnownComponentNames.ASYNC_TRANSPORT_EXECUTOR;
+import org.infinispan.commands.CommandsFactory;
+import org.infinispan.commands.remote.CacheRpcCommand;
+import org.infinispan.commands.write.InvalidateCommand;
+import org.infinispan.configuration.cache.Configuration;
+import org.infinispan.context.Flag;
+import org.infinispan.factories.KnownComponentNames;
+import org.infinispan.factories.annotations.ComponentName;
+import org.infinispan.factories.annotations.Inject;
+import org.infinispan.factories.annotations.Start;
+import org.infinispan.factories.annotations.Stop;
+import org.infinispan.remoting.rpc.ResponseMode;
+import org.infinispan.remoting.rpc.RpcManager;
+import org.infinispan.remoting.transport.Address;
+import org.infinispan.util.concurrent.AggregatingNotifyingFutureImpl;
+import org.infinispan.util.concurrent.ConcurrentMapFactory;
+import org.infinispan.util.concurrent.NoOpFuture;
+import org.infinispan.util.concurrent.NotifyingFutureImpl;
+import org.infinispan.util.concurrent.NotifyingNotifiableFuture;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 public class L1ManagerImpl implements L1Manager {
 
-   private static final Log log = LogFactory.getLog(L1ManagerImpl.class);
+   private static final ALogger log = LogFactory.getLog(L1ManagerImpl.class);
    private final boolean trace = log.isTraceEnabled();
 
    private Configuration configuration;
@@ -161,7 +161,7 @@ public class L1ManagerImpl implements L1Manager {
    }
 
    private Future<Object> flushCache(Collection<Object> keys, final Object retval, Address origin, boolean assumeOriginKeptEntryInL1, boolean useNotifyingFuture) {
-      if (trace) log.tracef("Invalidating L1 caches for keys %s", keys);
+      if (trace) log.trace("Invalidating L1 caches for keys " + keys);
 
       final Collection<Address> invalidationAddresses = buildInvalidationAddressList(keys, origin, assumeOriginKeptEntryInL1);
 
@@ -172,10 +172,11 @@ public class L1ManagerImpl implements L1Manager {
          boolean multicast = isUseMulticast(nodes);
 
          if (trace)
-            log.tracef("There are %s nodes involved in invalidation. Threshold is: %s; using multicast: %s", nodes, threshold, multicast);
+            log.trace("There are " + nodes + " nodes involved in invalidation. " +
+            		"Threshold is: " + threshold + "; using multicast: " + multicast);
 
          if (multicast) {
-            if (trace) log.tracef("Invalidating keys %s via multicast", keys);
+            if (trace) log.trace("Invalidating keys " + keys + " via multicast");
             final InvalidateCommand ic = commandsFactory.buildInvalidateFromL1Command(origin, false, Collections.<Flag>emptySet(), keys);
             if (useNotifyingFuture) {
                NotifyingNotifiableFuture<Object> future = new AggregatingNotifyingFutureImpl(retval, 2);
@@ -194,7 +195,7 @@ public class L1ManagerImpl implements L1Manager {
             final CacheRpcCommand rpc = commandsFactory.buildSingleRpcCommand(
                   commandsFactory.buildInvalidateFromL1Command(origin, false, Collections.<Flag>emptySet(), keys));
             // Ask the caches who have requested from us to remove
-            if (trace) log.tracef("Keys %s needs invalidation on %s", keys, invalidationAddresses);
+            if (trace) log.trace("Keys " + keys + " needs invalidation on " + invalidationAddresses);
             if (useNotifyingFuture) {
                NotifyingNotifiableFuture<Object> future = new AggregatingNotifyingFutureImpl(retval, 2);
                rpcManager.invokeRemotelyInFuture(invalidationAddresses, rpc, true, future, rpcTimeout, true);

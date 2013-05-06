@@ -22,6 +22,25 @@
  */
 package org.infinispan.distexec.mapreduce;
 
+import static org.infinispan.factories.KnownComponentNames.CACHE_MARSHALLER;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.CacheException;
@@ -47,27 +66,8 @@ import org.infinispan.util.concurrent.AbstractInProcessFuture;
 import org.infinispan.util.concurrent.FutureListener;
 import org.infinispan.util.concurrent.NotifyingFuture;
 import org.infinispan.util.concurrent.NotifyingNotifiableFuture;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import static org.infinispan.factories.KnownComponentNames.CACHE_MARSHALLER;
 
 /**
  * MapReduceTask is a distributed task allowing a large scale computation to be transparently
@@ -155,7 +155,7 @@ import static org.infinispan.factories.KnownComponentNames.CACHE_MARSHALLER;
  */
 public class MapReduceTask<KIn, VIn, KOut, VOut> {
 
-   private static final Log log = LogFactory.getLog(MapReduceTask.class);
+   private static final ALogger log = LogFactory.getLog(MapReduceTask.class);
    public static final String DEFAULT_TMP_CACHE_CONFIGURATION_NAME= "__tmpMapReduce";
 
    protected Mapper<KIn, VIn, KOut, VOut> mapper;
@@ -350,12 +350,12 @@ public class MapReduceTask<KIn, VIn, KOut, VOut> {
       CreateCacheCommand ccc = factory.buildCreateCacheCommand(tmpCacheName, DEFAULT_TMP_CACHE_CONFIGURATION_NAME);
       
       try{
-         log.debugf("Invoking %s across entire cluster ", ccc);
+         log.debug("Invoking " + ccc + " across entire cluster ");
          Map<Address, Response> map = rpc.invokeRemotely(null, ccc, true, false);
          //locally
          ccc.init(cache.getCacheManager());
          ccc.perform(null);
-         log.debugf("Invoked %s across entire cluster, results are %s", ccc, map);
+         log.debug("Invoked " + ccc + " across entire cluster, results are " + map);
       }
       catch (Throwable e) {
          throw new CacheException("Could not initialize temporary caches for MapReduce task on remote nodes ", e);
@@ -440,7 +440,7 @@ public class MapReduceTask<KIn, VIn, KOut, VOut> {
       }
       //hook into lifecycle
       MapReduceTaskLifecycleService taskLifecycleService = MapReduceTaskLifecycleService.getInstance();
-      log.tracef("For m/r task %s invoking %s locally", taskId, reducer);
+      log.trace("For m/r task " + taskId + " invoking " + reducer + " locally");
       try {
          taskLifecycleService.onPreExecute(reducer, cache);
          for (Entry<KOut, List<VOut>> e : mapPhasesResult.entrySet()) {
@@ -555,9 +555,9 @@ public class MapReduceTask<KIn, VIn, KOut, VOut> {
       RpcManager rpc = cache.getRpcManager(); 
       Map<Address, Response> map = null;
       try {
-         log.debugf("Invoking %s across entire cluster ", cmd);
+         log.debug("Invoking " + cmd + " across entire cluster ");
          map = rpc.invokeRemotely(null, cmd, true, false);
-         log.debugf("Invoked %s across entire cluster, results are %s", cmd, map);         
+         log.debug("Invoked " + cmd + " across entire cluster, results are " + map);         
       } catch (Throwable e) {
          throw new CacheException("Could not invoke map phase of MapReduce task on remote nodes ", e);
       }
@@ -572,7 +572,7 @@ public class MapReduceTask<KIn, VIn, KOut, VOut> {
          try {
             resultReduced = (Map<Address, Response>) future.get();               
             results.putAll(resultReduced);
-            log.debugf("Received result from future %s", resultReduced);
+            log.debug("Received result from future " + resultReduced);
          } catch (Exception e1) {
             throw new CacheException("Could not retrieve MapReduceTask result from remote node ", e1);
          }            
@@ -585,10 +585,10 @@ public class MapReduceTask<KIn, VIn, KOut, VOut> {
       RpcManager rpc = cache.getRpcManager();
       MapReduceFuture future = null;
       try {
-         log.debugf("Invoking %s on %s", cmd, address);
+         log.debug("Invoking " + cmd + " on " + address);
          future = new MapReduceFuture();
          rpc.invokeRemotelyInFuture(Collections.singleton(address), cmd, future);                  
-         log.debugf("Invoked %s on %s ", cmd, address);
+         log.debug("Invoked " + cmd + " on " + address);
       } catch (Exception ex) {
          throw new CacheException("Could not invoke map phase of MapReduceTask on remote node " + address, ex);
       }
@@ -617,23 +617,23 @@ public class MapReduceTask<KIn, VIn, KOut, VOut> {
    
    private Map<KOut, List<VOut>> invokeMapCombineLocallyForLocalReduction(MapCombineCommand<KIn, VIn, KOut, VOut> mcc) {
       MapReduceManager mapReduceManager = cache.getComponentRegistry().getComponent(MapReduceManager.class);
-      log.debugf("Invoking %s locally", mcc);
+      log.debug("Invoking " + mcc + " locally");
       try {         
          mcc.init(mapReduceManager);
          return mapReduceManager.mapAndCombineForLocalReduction(mcc);
       } finally {
-         log.debugf("Invoked %s locally", mcc);
+    	  log.debug("Invoked " + mcc + " locally");
       }
    }
    
    private Set<KOut> invokeMapCombineLocally(MapCombineCommand<KIn, VIn, KOut, VOut> mcc) {
       MapReduceManager mapReduceManager = cache.getComponentRegistry().getComponent(MapReduceManager.class);
-      log.debugf("Invoking %s locally", mcc);
+      log.debug("Invoking " + mcc + " locally");
       try {         
          mcc.init(mapReduceManager);
          return mapReduceManager.mapAndCombineForDistributedReduction(mcc);
       } finally {
-         log.debugf("Invoked %s locally", mcc);
+    	  log.debug("Invoked " + mcc + " locally");
       }
    }
    
@@ -642,9 +642,9 @@ public class MapReduceTask<KIn, VIn, KOut, VOut> {
       reduceCommand.init(mrManager);
       Map<KOut,VOut> localReduceResult = null;
       try {
-         log.debugf("Invoking %s locally ", reduceCommand);
+    	  log.debug("Invoking " + reduceCommand + " locally");
          localReduceResult = mrManager.reduce(reduceCommand);
-         log.debugf("Invoked %s locally", reduceCommand);
+         log.debug("Invoked " + reduceCommand + " locally");
       } catch (Throwable e1) {
          throw new CacheException("Could not invoke MapReduce task locally ", e1);
       }

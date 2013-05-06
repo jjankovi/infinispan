@@ -22,13 +22,14 @@
  */
 package org.infinispan.util;
 
-import org.infinispan.config.TypedPropertiesAdapter;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
+import java.util.Properties;
 
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import java.util.Properties;
+
+import org.infinispan.config.TypedPropertiesAdapter;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * Type-aware properties.  Extends the JDK {@link Properties} class to provide accessors that convert values to certain
@@ -47,7 +48,7 @@ public class TypedProperties extends Properties {
    /** The serialVersionUID */
    private static final long serialVersionUID = 3799321248100686287L;
 
-   private static final Log log = LogFactory.getLog(TypedProperties.class);
+   private static final ALogger log = LogFactory.getLog(TypedProperties.class);
 
    /**
     * Copy constructor
@@ -93,7 +94,8 @@ public class TypedProperties extends Properties {
          return Integer.parseInt(value);
       }
       catch (NumberFormatException nfe) {
-         log.unableToConvertStringPropertyToInt(value, defaultValue);
+         log.warn("Unable to convert string property [" + value 
+        		 + "] to an int! Using default value of " + defaultValue);
          return defaultValue;
       }
    }
@@ -115,7 +117,8 @@ public class TypedProperties extends Properties {
          return Long.parseLong(value);
       }
       catch (NumberFormatException nfe) {
-         log.unableToConvertStringPropertyToLong(value, defaultValue);
+         log.warn("Unable to convert string property [" + value 
+        		 + "] to a long! Using default value of " + defaultValue);
          return defaultValue;
       }
    }
@@ -137,7 +140,8 @@ public class TypedProperties extends Properties {
          return Boolean.parseBoolean(value);
       }
       catch (Exception e) {
-         log.unableToConvertStringPropertyToBoolean(value, defaultValue);
+         log.warn("Unable to convert string property [" + value 
+        		 + "] to a boolean! Using default value of " + defaultValue);
          return defaultValue;
       }
    }

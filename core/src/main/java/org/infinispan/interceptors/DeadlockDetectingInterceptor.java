@@ -22,6 +22,8 @@
  */
 package org.infinispan.interceptors;
 
+import static java.util.Collections.emptySet;
+
 import org.infinispan.commands.VisitableCommand;
 import org.infinispan.commands.control.LockControlCommand;
 import org.infinispan.commands.tx.PrepareCommand;
@@ -33,10 +35,8 @@ import org.infinispan.context.impl.TxInvocationContext;
 import org.infinispan.factories.annotations.Start;
 import org.infinispan.interceptors.base.CommandInterceptor;
 import org.infinispan.transaction.xa.DldGlobalTransaction;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import static java.util.Collections.emptySet;
 
 /**
  * This interceptor populates the {@link org.infinispan.transaction.xa.DldGlobalTransaction} with
@@ -51,11 +51,11 @@ import static java.util.Collections.emptySet;
  */
 public class DeadlockDetectingInterceptor extends CommandInterceptor {
 
-   private static final Log log = LogFactory.getLog(DeadlockDetectingInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(DeadlockDetectingInterceptor.class);
    private static final boolean trace = log.isTraceEnabled();
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 
@@ -92,7 +92,7 @@ public class DeadlockDetectingInterceptor extends CommandInterceptor {
          //in the case of DIST we need to propagate the list of keys. In all other situations in can be determined
          // based on the actual command
          if (cacheConfiguration.clustering().cacheMode().isDistributed()) {
-            if (log.isTraceEnabled()) log.tracef("Locks as seen at origin are: %s", ctx.getLockedKeys());
+            if (log.isTraceEnabled()) log.trace("Locks as seen at origin are: " + ctx.getLockedKeys());
             ((DldGlobalTransaction) ctx.getGlobalTransaction()).setLocksHeldAtOrigin(ctx.getLockedKeys());
          }
       }

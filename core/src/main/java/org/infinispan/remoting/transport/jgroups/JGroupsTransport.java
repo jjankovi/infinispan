@@ -22,51 +22,8 @@
  */
 package org.infinispan.remoting.transport.jgroups;
 
-import org.infinispan.CacheConfigurationException;
-import org.infinispan.CacheException;
-import org.infinispan.commands.ReplicableCommand;
-import org.infinispan.commands.remote.ClusteredGetCommand;
-import org.infinispan.config.parsing.XmlConfigHelper;
-import org.infinispan.configuration.global.TransportConfiguration;
-import org.infinispan.factories.GlobalComponentRegistry;
-import org.infinispan.factories.annotations.ComponentName;
-import org.infinispan.factories.annotations.Inject;
-import org.infinispan.jmx.JmxUtil;
-import org.infinispan.marshall.StreamingMarshaller;
-import org.infinispan.notifications.cachemanagerlistener.CacheManagerNotifier;
-import org.infinispan.remoting.InboundInvocationHandler;
-import org.infinispan.remoting.responses.Response;
-import org.infinispan.remoting.rpc.ResponseFilter;
-import org.infinispan.remoting.rpc.ResponseMode;
-import org.infinispan.remoting.transport.AbstractTransport;
-import org.infinispan.remoting.transport.Address;
-import org.infinispan.remoting.transport.BackupResponse;
-import org.infinispan.util.FileLookupFactory;
-import org.infinispan.util.TypedProperties;
-import org.infinispan.util.Util;
-import org.infinispan.util.concurrent.TimeoutException;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-import org.infinispan.xsite.BackupReceiverRepository;
-import org.infinispan.xsite.XSiteBackup;
-import org.jgroups.Channel;
-import org.jgroups.Event;
-import org.jgroups.JChannel;
-import org.jgroups.MembershipListener;
-import org.jgroups.MergeView;
-import org.jgroups.View;
-import org.jgroups.blocks.RequestOptions;
-import org.jgroups.blocks.RspFilter;
-import org.jgroups.jmx.JmxConfigurator;
-import org.jgroups.protocols.relay.SiteMaster;
-import org.jgroups.stack.AddressGenerator;
-import org.jgroups.util.Buffer;
-import org.jgroups.util.Rsp;
-import org.jgroups.util.RspList;
-import org.jgroups.util.TopologyUUID;
-
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
+import static org.infinispan.factories.KnownComponentNames.ASYNC_TRANSPORT_EXECUTOR;
+import static org.infinispan.factories.KnownComponentNames.GLOBAL_MARSHALLER;
 
 import java.io.FileNotFoundException;
 import java.net.URL;
@@ -81,8 +38,46 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import static org.infinispan.factories.KnownComponentNames.ASYNC_TRANSPORT_EXECUTOR;
-import static org.infinispan.factories.KnownComponentNames.GLOBAL_MARSHALLER;
+import org.infinispan.CacheConfigurationException;
+import org.infinispan.CacheException;
+import org.infinispan.commands.ReplicableCommand;
+import org.infinispan.commands.remote.ClusteredGetCommand;
+import org.infinispan.config.parsing.XmlConfigHelper;
+import org.infinispan.configuration.global.TransportConfiguration;
+import org.infinispan.factories.GlobalComponentRegistry;
+import org.infinispan.factories.annotations.ComponentName;
+import org.infinispan.factories.annotations.Inject;
+import org.infinispan.marshall.StreamingMarshaller;
+import org.infinispan.notifications.cachemanagerlistener.CacheManagerNotifier;
+import org.infinispan.remoting.InboundInvocationHandler;
+import org.infinispan.remoting.responses.Response;
+import org.infinispan.remoting.rpc.ResponseFilter;
+import org.infinispan.remoting.rpc.ResponseMode;
+import org.infinispan.remoting.transport.AbstractTransport;
+import org.infinispan.remoting.transport.Address;
+import org.infinispan.remoting.transport.BackupResponse;
+import org.infinispan.util.FileLookupFactory;
+import org.infinispan.util.TypedProperties;
+import org.infinispan.util.Util;
+import org.infinispan.util.concurrent.TimeoutException;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
+import org.infinispan.xsite.BackupReceiverRepository;
+import org.infinispan.xsite.XSiteBackup;
+import org.jgroups.Channel;
+import org.jgroups.Event;
+import org.jgroups.JChannel;
+import org.jgroups.MembershipListener;
+import org.jgroups.MergeView;
+import org.jgroups.View;
+import org.jgroups.blocks.RequestOptions;
+import org.jgroups.blocks.RspFilter;
+import org.jgroups.protocols.relay.SiteMaster;
+import org.jgroups.stack.AddressGenerator;
+import org.jgroups.util.Buffer;
+import org.jgroups.util.Rsp;
+import org.jgroups.util.RspList;
+import org.jgroups.util.TopologyUUID;
 
 /**
  * An encapsulation of a JGroups transport. JGroups transports can be configured using a variety of
@@ -109,7 +104,7 @@ public class JGroupsTransport extends AbstractTransport implements MembershipLis
    public static final String CHANNEL_LOOKUP = "channelLookup";
    protected static final String DEFAULT_JGROUPS_CONFIGURATION_FILE = "jgroups-udp.xml";
 
-   static final Log log = LogFactory.getLog(JGroupsTransport.class);
+   static final ALogger log = LogFactory.getLog(JGroupsTransport.class);
    static final boolean trace = log.isTraceEnabled();
 
    protected boolean startChannel = true, stopChannel = true;
@@ -123,7 +118,7 @@ public class JGroupsTransport extends AbstractTransport implements MembershipLis
    private BackupReceiverRepository backupReceiverRepository;
 
    private boolean globalStatsEnabled;
-   private MBeanServer mbeanServer;
+//   private MBeanServer mbeanServer;
    private String domain;
 
    protected Channel channel;
@@ -156,7 +151,7 @@ public class JGroupsTransport extends AbstractTransport implements MembershipLis
    }
 
    @Override
-   public Log getLog() {
+   public ALogger getLog() {
       return log;
    }
 
@@ -191,7 +186,7 @@ public class JGroupsTransport extends AbstractTransport implements MembershipLis
       props = TypedProperties.toTypedProperties(configuration.transport().properties());
 
       if (log.isInfoEnabled())
-         log.startingJGroupsChannel();
+         log.info("Starting JGroups Channel");
 
       initChannelAndRPCDispatcher();
       startJGroupsChannelIfNeeded();
@@ -214,10 +209,10 @@ public class JGroupsTransport extends AbstractTransport implements MembershipLis
             // when first cache starts, so it's safer to do it here.
             globalStatsEnabled = configuration.globalJmxStatistics().enabled();
             if (globalStatsEnabled) {
-               String groupName = String.format("type=channel,cluster=%s", ObjectName.quote(clusterName));
-               mbeanServer = JmxUtil.lookupMBeanServer(configuration);
-               domain = JmxUtil.buildJmxDomain(configuration, mbeanServer, groupName);
-               JmxConfigurator.registerChannel((JChannel) channel, mbeanServer, domain, clusterName, true);
+//               String groupName = String.format("type=channel,cluster=%s", ObjectName.quote(clusterName));
+//               mbeanServer = JmxUtil.lookupMBeanServer(configuration);
+//               domain = JmxUtil.buildJmxDomain(configuration, mbeanServer, groupName);
+//               JmxConfigurator.registerChannel((JChannel) channel, mbeanServer, domain, clusterName, true);
             }
          } catch (Exception e) {
             throw new CacheException("Channel connected, but unable to register MBeans", e);
@@ -229,7 +224,7 @@ public class JGroupsTransport extends AbstractTransport implements MembershipLis
          viewAccepted(channel.getView());
       }
       if (log.isInfoEnabled())
-         log.localAndPhysicalAddress(getAddress(), getPhysicalAddresses());
+         log.info("Cache local address is " + getAddress() + ", physical addresses are " + getPhysicalAddresses());
    }
 
    @Override
@@ -246,24 +241,24 @@ public class JGroupsTransport extends AbstractTransport implements MembershipLis
    public void stop() {
       try {
          if (stopChannel && channel != null && channel.isOpen()) {
-            log.disconnectAndCloseJGroups();
+            log.info("Disconnecting and closing JGroups Channel");
 
             // Unregistering before disconnecting/closing because
             // after that the cluster name is null
             if (globalStatsEnabled) {
-               JmxConfigurator.unregisterChannel((JChannel) channel, mbeanServer, domain, channel.getClusterName());
+//               JmxConfigurator.unregisterChannel((JChannel) channel, mbeanServer, domain, channel.getClusterName());
             }
 
             channel.disconnect();
             channel.close();
          }
       } catch (Exception toLog) {
-         log.problemClosingChannel(toLog);
+         log.error("Problem closing channel; setting it to null", toLog);
       }
 
       channel = null;
       if (dispatcher != null) {
-         log.stoppingRpcDispatcher();
+         log.info("Stopping the RpcDispatcher");
          dispatcher.stop();
       }
 
@@ -342,14 +337,15 @@ public class JGroupsTransport extends AbstractTransport implements MembershipLis
                startChannel = lookup.shouldStartAndConnect();
                stopChannel = lookup.shouldStopAndDisconnect();
             } catch (ClassCastException e) {
-               log.wrongTypeForJGroupsChannelLookup(channelLookupClassName, e);
+               log.error("Class [" + channelLookupClassName + "] cannot be cast to JGroupsChannelLookup! Not using a channel lookup.", e);
                throw new CacheException(e);
             } catch (Exception e) {
-               log.errorInstantiatingJGroupsChannelLookup(channelLookupClassName, e);
+               log.error("Errors instantiating [" + channelLookupClassName + "]! Not using a channel lookup.", e);
                throw new CacheException(e);
             }
             if (configuration.transport().strictPeerToPeer() && !startChannel) {
-               log.warnStrictPeerToPeerWithInjectedChannel();
+               log.info("Strict peer-to-peer is enabled but the JGroups channel was started externally - " +
+               		"this is very likely to result in RPC timeout errors on startup");
             }
          }
 
@@ -364,7 +360,7 @@ public class JGroupsTransport extends AbstractTransport implements MembershipLis
             try {                              
                channel = new JChannel(conf);
             } catch (Exception e) {
-               log.errorCreatingChannelFromConfigFile(cfg);
+               log.error("Error while trying to create a channel using config files: " + cfg);
                throw new CacheException(e);
             }
          }
@@ -374,7 +370,7 @@ public class JGroupsTransport extends AbstractTransport implements MembershipLis
             try {
                channel = new JChannel(XmlConfigHelper.stringToElement(cfg));
             } catch (Exception e) {
-               log.errorCreatingChannelFromXML(cfg);
+               log.error("Error while trying to create a channel using config XML: " + cfg);
                throw new CacheException(e);
             }
          }
@@ -384,14 +380,15 @@ public class JGroupsTransport extends AbstractTransport implements MembershipLis
             try {
                channel = new JChannel(cfg);
             } catch (Exception e) {
-               log.errorCreatingChannelFromConfigString(cfg);
+               log.error("Error while trying to create a channel using config string: " + cfg);
                throw new CacheException(e);
             }
          }
       }
 
       if (channel == null) {
-         log.unableToUseJGroupsPropertiesProvided(props);
+         log.info("Unable to use any JGroups configuration mechanisms provided in properties " + props + ". " +
+         "Using default JGroups configuration!");
          try {
             channel = new JChannel(FileLookupFactory.newInstance().lookupFileLocation(DEFAULT_JGROUPS_CONFIGURATION_FILE, configuration.classLoader()));
          } catch (Exception e) {
@@ -421,7 +418,7 @@ public class JGroupsTransport extends AbstractTransport implements MembershipLis
       try {
          channelConnectedLatch.await();
       } catch (InterruptedException e) {
-         log.interruptedWaitingForCoordinator(e);
+         log.error("getCoordinator(): Interrupted while waiting for members to be set", e);
       }
    }
 
@@ -470,7 +467,7 @@ public class JGroupsTransport extends AbstractTransport implements MembershipLis
       }
 
       if (trace)
-         log.tracef("dests=%s, command=%s, mode=%s, timeout=%s", recipients, rpcCommand, mode, timeout);
+         log.trace("dests=" + recipients + ", command=" + rpcCommand + ", mode=" + mode + ", timeout=" + timeout);
       Address self = getAddress();
       boolean ignoreLeavers = mode == ResponseMode.SYNCHRONOUS_IGNORE_LEAVERS || mode == ResponseMode.WAIT_FOR_VALID_RESPONSE;
       if (mode.isSynchronous() && recipients != null && !getMembers().containsAll(recipients)) {
@@ -550,7 +547,7 @@ public class JGroupsTransport extends AbstractTransport implements MembershipLis
 
    @Override
    public BackupResponse backupRemotely(Collection<XSiteBackup> backups, ReplicableCommand rpcCommand) throws Exception {
-      log.tracef("About to send to backups %s, command %s",backups, rpcCommand);
+      log.trace("About to send to backups " + backups + ", command " +  rpcCommand);
       Buffer buf = dispatcher.marshallCall(dispatcher.getMarshaller(), rpcCommand);
       Map<XSiteBackup, Future<Object>> syncBackupCalls = new HashMap<XSiteBackup, Future<Object>>(backups.size());
       for (XSiteBackup xsb : backups) {
@@ -620,10 +617,10 @@ public class JGroupsTransport extends AbstractTransport implements MembershipLis
 
    @Override
    public void viewAccepted(View newView) {
-      log.debugf("New view accepted: %s", newView);
+      log.debug("New view accepted: " + newView);
       List<org.jgroups.Address> newMembers = newView.getMembers();
       if (newMembers == null || newMembers.isEmpty()) {
-         log.debugf("Received null or empty member list from JGroups channel: " + newView);
+         log.debug("Received null or empty member list from JGroups channel: " + newView);
          return;
       }
 
@@ -644,10 +641,10 @@ public class JGroupsTransport extends AbstractTransport implements MembershipLis
       if (hasNotifier) {
          Notify n;
          if (newView instanceof MergeView) {
-            log.receivedMergedView(newView);
+            log.info("Received new, MERGED cluster view: " + newView);
             n = new NotifyMerge();
          } else {
-            log.receivedClusterView(newView);
+            log.info("Received new cluster view: " + newView);
             n = new NotifyViewChange();
          }
 

@@ -22,16 +22,17 @@
  */
 package org.infinispan.commands.remote.recovery;
 
+
+
 import org.infinispan.context.InvocationContext;
 import org.infinispan.transaction.RemoteTransaction;
 import org.infinispan.transaction.TransactionTable;
 import org.infinispan.transaction.xa.GlobalTransaction;
 import org.infinispan.transaction.xa.recovery.RecoveryManager;
 import org.infinispan.util.concurrent.locks.LockManager;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.xa.Xid;
+import org.transaction.xa.Xid;
 
 /**
  * Command for removing recovery related information from the cluster.
@@ -41,7 +42,7 @@ import javax.transaction.xa.Xid;
  */
 public class TxCompletionNotificationCommand extends RecoveryCommand {
 
-   private static Log log = LogFactory.getLog(TxCompletionNotificationCommand.class);
+   private static ALogger log = LogFactory.getLog(TxCompletionNotificationCommand.class);
 
    public static final int COMMAND_ID = 22;
 
@@ -79,7 +80,7 @@ public class TxCompletionNotificationCommand extends RecoveryCommand {
 
    @Override
    public Object perform(InvocationContext ctx) throws Throwable {
-      log.tracef("Processing completed transaction %s", gtx);
+      log.trace("Processing completed transaction " + gtx);
       RemoteTransaction remoteTx = null;
       if (recoveryManager != null) { //recovery in use
          if (xid != null) {

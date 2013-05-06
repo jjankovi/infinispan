@@ -39,7 +39,11 @@ import java.util.Set;
  */
 public class ManageableComponentMetadata extends ComponentMetadata {
 
-   private String jmxObjectName;
+   /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+private String jmxObjectName;
    private String description;
    private Set<JmxAttributeMetadata> attributeMetadata;
    private Set<JmxOperationMetadata> operationMetadata;

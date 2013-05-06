@@ -31,8 +31,7 @@ import org.infinispan.factories.scopes.Scope;
 import org.infinispan.factories.scopes.Scopes;
 import org.infinispan.remoting.transport.Address;
 import org.infinispan.transaction.RemoteTransaction;
-
-import javax.transaction.Transaction;
+import org.transaction.Transaction;
 
 /**
  * Manages the association between an {@link org.infinispan.context.InvocationContext} and the calling thread. Also acts

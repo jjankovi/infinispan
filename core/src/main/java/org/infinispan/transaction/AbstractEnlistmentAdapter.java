@@ -19,6 +19,8 @@
 
 package org.infinispan.transaction;
 
+import java.util.Collection;
+
 import org.infinispan.commands.CommandsFactory;
 import org.infinispan.commands.remote.recovery.TxCompletionNotificationCommand;
 import org.infinispan.configuration.cache.Configuration;
@@ -28,10 +30,8 @@ import org.infinispan.remoting.rpc.RpcManager;
 import org.infinispan.remoting.transport.Address;
 import org.infinispan.transaction.xa.CacheTransaction;
 import org.infinispan.transaction.xa.GlobalTransaction;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.Collection;
 
 /**
  * Base class for both Sync and XAResource enlistment adapters.
@@ -41,7 +41,7 @@ import java.util.Collection;
  */
 public abstract class AbstractEnlistmentAdapter {
 
-   private static Log log = LogFactory.getLog(AbstractEnlistmentAdapter.class);
+   private static ALogger log = LogFactory.getLog(AbstractEnlistmentAdapter.class);
 
    private final CommandsFactory commandsFactory;
    private final RpcManager rpcManager;
@@ -83,7 +83,7 @@ public abstract class AbstractEnlistmentAdapter {
       if (mayHaveRemoteLocks(localTransaction) && isClustered() && !isSecondPhaseAsync) {
          final TxCompletionNotificationCommand command = commandsFactory.buildTxCompletionNotificationCommand(null, gtx);
          final Collection<Address> owners = clusteringLogic.getOwners(localTransaction.getAffectedKeys());
-         log.tracef("About to invoke tx completion notification on nodes %s", owners);
+         log.trace("About to invoke tx completion notification on nodes " + owners);
          rpcManager.invokeRemotely(owners, command, false, true);
       }
    }

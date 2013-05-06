@@ -22,6 +22,9 @@
  */
 package org.infinispan.interceptors;
 
+import java.util.List;
+import java.util.Map;
+
 import org.infinispan.commands.FlagAffectedCommand;
 import org.infinispan.commands.tx.PrepareCommand;
 import org.infinispan.commands.write.ClearCommand;
@@ -38,11 +41,8 @@ import org.infinispan.factories.annotations.Inject;
 import org.infinispan.factories.annotations.Start;
 import org.infinispan.remoting.transport.Address;
 import org.infinispan.remoting.transport.Transport;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * Cache store interceptor specific for the distribution cache mode. Put operations has been modified in such way that
@@ -65,10 +65,10 @@ public class DistCacheStoreInterceptor extends CacheStoreInterceptor {
    Transport transport;
    Address address;
 
-   private static final Log log = LogFactory.getLog(DistCacheStoreInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(DistCacheStoreInterceptor.class);
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 
@@ -93,7 +93,7 @@ public class DistCacheStoreInterceptor extends CacheStoreInterceptor {
       if (skip(ctx, key, command) || ctx.isInTxScope() || !command.isSuccessful()) return returnValue;
       InternalCacheEntry se = getStoredEntry(key, ctx);
       store.store(se);
-      log.tracef("Stored entry %s under key %s", se, key);
+      log.trace("Stored entry " + se + " under key " + key);
       if (getStatisticsEnabled()) cacheStores.incrementAndGet();
       return returnValue;
    }
@@ -108,7 +108,7 @@ public class DistCacheStoreInterceptor extends CacheStoreInterceptor {
          if (!skipKey(key)) {
             InternalCacheEntry se = getStoredEntry(key, ctx);
             store.store(se);
-            log.tracef("Stored entry %s under key %s", se, key);
+            log.trace("Stored entry " + se + " under key " + key);
          }
       }
       if (getStatisticsEnabled()) cacheStores.getAndAdd(map.size());
@@ -121,7 +121,7 @@ public class DistCacheStoreInterceptor extends CacheStoreInterceptor {
       Object key = command.getKey();
       if (!skip(ctx, key, command) && !ctx.isInTxScope() && command.isSuccessful()) {
          boolean resp = store.remove(key);
-         log.tracef("Removed entry under key %s and got response %s from CacheStore", key, resp);
+         log.trace("Removed entry under key " + key + " and got response " + resp + " from CacheStore");
       }
       return retval;
    }
@@ -135,7 +135,7 @@ public class DistCacheStoreInterceptor extends CacheStoreInterceptor {
 
       InternalCacheEntry se = getStoredEntry(key, ctx);
       store.store(se);
-      log.tracef("Stored entry %s under key %s", se, key);
+      log.trace("Stored entry " + se + " under key " + key);
       if (getStatisticsEnabled()) cacheStores.incrementAndGet();
 
       return returnValue;

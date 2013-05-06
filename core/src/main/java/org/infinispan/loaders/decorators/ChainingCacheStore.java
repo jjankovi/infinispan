@@ -22,7 +22,19 @@
  */
 package org.infinispan.loaders.decorators;
 
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import net.jcip.annotations.GuardedBy;
+
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.LegacyConfigurationAdaptor;
 import org.infinispan.configuration.cache.LoaderConfiguration;
@@ -36,19 +48,8 @@ import org.infinispan.loaders.CacheStoreConfig;
 import org.infinispan.loaders.modifications.Modification;
 import org.infinispan.marshall.StreamingMarshaller;
 import org.infinispan.transaction.xa.GlobalTransaction;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * A chaining cache loader that allows us to configure > 1 cache loader.
@@ -63,7 +64,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @since 4.0
  */
 public class ChainingCacheStore implements CacheStore {
-   private static final Log log = LogFactory.getLog(ChainingCacheStore.class);
+   private static final ALogger log = LogFactory.getLog(ChainingCacheStore.class);
    private final ReadWriteLock loadersAndStoresMutex = new ReentrantReadWriteLock();
    @GuardedBy("loadersAndStoresMutex")
    private final Map<CacheLoader, LoaderConfiguration> loaders = new LinkedHashMap<CacheLoader, LoaderConfiguration>();
@@ -346,10 +347,10 @@ public class ChainingCacheStore implements CacheStore {
 
          for (CacheLoader cl : toRemove) {
             try {
-               log.debugf("Stopping and removing cache loader %s", loaderType);
+               log.debug("Stopping and removing cache loader " + loaderType);
                cl.stop();
             } catch (Exception e) {
-               log.infof("Problems shutting down cache loader %s", loaderType, e);
+               log.info("Problems shutting down cache loader " + loaderType, e);
             }
             stores.remove(cl);
             loaders.remove(cl);

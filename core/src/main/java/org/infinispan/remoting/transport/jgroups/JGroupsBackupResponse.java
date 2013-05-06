@@ -19,21 +19,21 @@
 
 package org.infinispan.remoting.transport.jgroups;
 
-import org.infinispan.remoting.responses.ExceptionResponse;
-import org.infinispan.remoting.transport.BackupResponse;
-import org.infinispan.util.concurrent.TimeoutException;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-import org.infinispan.xsite.XSiteBackup;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static org.infinispan.util.Util.formatString;
+import static org.infinispan.util.Util.prettyPrintTime;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static org.infinispan.util.Util.formatString;
-import static org.infinispan.util.Util.prettyPrintTime;
+import org.infinispan.remoting.responses.ExceptionResponse;
+import org.infinispan.remoting.transport.BackupResponse;
+import org.infinispan.util.concurrent.TimeoutException;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
+import org.infinispan.xsite.XSiteBackup;
 
 /**
  * @author Mircea Markus
@@ -41,7 +41,7 @@ import static org.infinispan.util.Util.prettyPrintTime;
  */
 public class JGroupsBackupResponse implements BackupResponse {
 
-   private static Log log = LogFactory.getLog(JGroupsBackupResponse.class);
+   private static ALogger log = LogFactory.getLog(JGroupsBackupResponse.class);
 
    private final Map<XSiteBackup, Future<Object>> syncBackupCalls;
    private Map<String, Exception> errors;
@@ -81,10 +81,10 @@ public class JGroupsBackupResponse implements BackupResponse {
 
          if (value instanceof ExceptionResponse) {
             Exception remoteException = ((ExceptionResponse) value).getException();
-            log.tracef(remoteException, "Got error backup response from site %s", siteName);
+            log.trace("Got error backup response from site " + siteName, remoteException);
             errors.put(siteName, remoteException);
          } else {
-            log.tracef("Received response from site %s: %s", siteName, value);
+            log.trace("Received response from site " + siteName + ": " + value);
          }
       }
    }

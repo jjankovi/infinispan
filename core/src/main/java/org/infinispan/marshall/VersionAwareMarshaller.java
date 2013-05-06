@@ -22,6 +22,14 @@
  */
 package org.infinispan.marshall;
 
+import java.io.ByteArrayInputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.io.OutputStream;
+
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.global.GlobalConfiguration;
@@ -30,16 +38,8 @@ import org.infinispan.io.ByteBuffer;
 import org.infinispan.io.ExposedByteArrayOutputStream;
 import org.infinispan.marshall.jboss.ExternalizerTable;
 import org.infinispan.marshall.jboss.JBossMarshaller;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.io.ByteArrayInputStream;
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.io.OutputStream;
 
 /**
  * A delegate to various other marshallers like {@link JBossMarshaller}. This delegating marshaller adds versioning
@@ -51,7 +51,7 @@ import java.io.OutputStream;
  * @since 4.0
  */
 public class VersionAwareMarshaller extends AbstractMarshaller implements StreamingMarshaller {
-   private static final Log log = LogFactory.getLog(VersionAwareMarshaller.class);
+   private static final ALogger log = LogFactory.getLog(VersionAwareMarshaller.class);
    private final boolean trace = log.isTraceEnabled();
 
    private static final int VERSION_510 = 510;
@@ -97,7 +97,7 @@ public class VersionAwareMarshaller extends AbstractMarshaller implements Stream
             if (log.isTraceEnabled()) log.trace("Interrupted exception while marshalling", ioe.getCause());
             throw (InterruptedException) ioe.getCause();
          } else {
-            log.errorMarshallingObject(ioe);
+            log.error("Exception while marshalling object", ioe);
             throw ioe;
          }
       } finally {
@@ -125,10 +125,10 @@ public class VersionAwareMarshaller extends AbstractMarshaller implements Stream
       try {
          final int version = VERSION_510;
          out.writeShort(version);
-         if (trace) log.tracef("Wrote version %s", version);
+         if (trace) log.trace("Wrote version " + version);
       } catch (Exception e) {
          finishObjectOutput(out);
-         log.unableToReadVersionId();
+         log.error("Unable to read version id from first two bytes of stream, barfing.");
          throw new IOException("Unable to read version id from first two bytes of stream : " + e.getMessage());
       }
       return out;
@@ -162,11 +162,11 @@ public class VersionAwareMarshaller extends AbstractMarshaller implements Stream
       int versionId;
       try {
          versionId = in.readShort();
-         if (trace) log.tracef("Read version %s", versionId);
+         if (trace) log.trace("Read version " + versionId);
       }
       catch (Exception e) {
          finishObjectInput(in);
-         log.unableToReadVersionId();
+         log.error("Unable to read version id from first two bytes of stream, barfing.");
          throw new IOException("Unable to read version id from first two bytes of stream: " + e.getMessage());
       }
       return in;

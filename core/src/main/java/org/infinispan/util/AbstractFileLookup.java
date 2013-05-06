@@ -32,12 +32,12 @@ import java.net.URL;
 import java.util.Collection;
 
 import org.infinispan.util.FileLookupFactory.DefaultFileLookup;
-import org.infinispan.util.logging.BasicLogFactory;
-import org.jboss.logging.BasicLogger;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 public abstract class AbstractFileLookup implements FileLookup {
 
-   private static final BasicLogger log = BasicLogFactory.getLog(FileLookup.class);
+   private static final ALogger log = LogFactory.getLog(FileLookup.class);
 
    public AbstractFileLookup() {
       super();
@@ -54,7 +54,7 @@ public abstract class AbstractFileLookup implements FileLookup {
       InputStream is = filename == null || filename.length() == 0 ? null : getAsInputStreamFromClassLoader(filename, cl);
       if (is == null) {
          if (log.isDebugEnabled())
-            log.debugf("Unable to find file %s in classpath; searching for this file on the filesystem instead.", filename);
+            log.debug("Unable to find file " + filename + " in classpath; searching for this file on the filesystem instead.");
          try {
             is = new FileInputStream(filename);
          }
@@ -79,7 +79,7 @@ public abstract class AbstractFileLookup implements FileLookup {
       InputStream is = filename == null || filename.length() == 0 ? null : getAsInputStreamFromClassLoader(filename, cl);
       if (is == null) {
          if (log.isDebugEnabled())
-            log.debugf("Unable to find file %s in classpath; searching for this file on the filesystem instead.", filename);
+            log.debug("Unable to find file " + filename + " in classpath; searching for this file on the filesystem instead.");
          return new FileInputStream(filename);
       }
       return is;

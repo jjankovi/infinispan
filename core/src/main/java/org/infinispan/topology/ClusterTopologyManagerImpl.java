@@ -20,6 +20,8 @@
 package org.infinispan.topology;
 
 
+import static org.infinispan.factories.KnownComponentNames.ASYNC_TRANSPORT_EXECUTOR;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -54,10 +56,8 @@ import org.infinispan.remoting.rpc.ResponseMode;
 import org.infinispan.remoting.transport.Address;
 import org.infinispan.remoting.transport.Transport;
 import org.infinispan.util.concurrent.ConcurrentMapFactory;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import static org.infinispan.factories.KnownComponentNames.ASYNC_TRANSPORT_EXECUTOR;
 
 /**
  * The {@code ClusterTopologyManager} implementation.
@@ -66,7 +66,7 @@ import static org.infinispan.factories.KnownComponentNames.ASYNC_TRANSPORT_EXECU
  * @since 5.2
  */
 public class ClusterTopologyManagerImpl implements ClusterTopologyManager {
-   private static Log log = LogFactory.getLog(ClusterTopologyManagerImpl.class);
+   private static ALogger log = LogFactory.getLog(ClusterTopologyManagerImpl.class);
 
    private Transport transport;
    private RebalancePolicy rebalancePolicy;
@@ -125,8 +125,7 @@ public class ClusterTopologyManagerImpl implements ClusterTopologyManager {
 
    @Override
    public void updateConsistentHash(String cacheName, CacheTopology cacheTopology) throws Exception {
-      log.debugf("Updating cluster-wide consistent hash for cache %s, topology = %s",
-            cacheName, cacheTopology);
+      log.debug("Updating cluster-wide consistent hash for cache " + cacheName + ", topology = " + cacheTopology);
       ReplicableCommand command = new CacheTopologyControlCommand(cacheName,
             CacheTopologyControlCommand.Type.CH_UPDATE, transport.getAddress(), cacheTopology,
             transport.getViewId());
@@ -143,14 +142,14 @@ public class ClusterTopologyManagerImpl implements ClusterTopologyManager {
    }
 
    private void onClusterRebalanceCompleted(String cacheName, int topologyId, RebalanceInfo rebalanceInfo) throws Exception {
-      log.debugf("Removing rebalance information for topology id %d", topologyId);
+      log.debug("Removing rebalance information for topology id " + topologyId);
       rebalanceStatusMap.remove(cacheName);
       rebalancePolicy.onRebalanceCompleted(cacheName, topologyId);
    }
 
    @Override
    public void rebalance(String cacheName, CacheTopology cacheTopology) throws Exception {
-      log.debugf("Starting cluster-wide rebalance for cache %s, topology = %s", cacheName, cacheTopology);
+      log.debug("Starting cluster-wide rebalance for cache " + cacheName + ", topology = " + cacheTopology);
       int topologyId = cacheTopology.getTopologyId();
       Collection<Address> members = cacheTopology.getPendingCH().getMembers();
       RebalanceInfo existingRebalance = rebalanceStatusMap.putIfAbsent(cacheName,
@@ -169,8 +168,8 @@ public class ClusterTopologyManagerImpl implements ClusterTopologyManager {
    public CacheTopology handleJoin(String cacheName, Address joiner, CacheJoinInfo joinInfo, int viewId) throws Exception {
       waitForView(viewId);
       if (isShuttingDown) {
-         log.debugf("Ignoring join request from %s for cache %s, the local cache manager is shutting down",
-               joiner, cacheName);
+         log.debug("Ignoring join req uest from " + joiner + " for cache " 
+        		 + cacheName + ", the local cache manager is shutting down");
          return null;
       }
       rebalancePolicy.initCache(cacheName, joinInfo);
@@ -180,8 +179,8 @@ public class ClusterTopologyManagerImpl implements ClusterTopologyManager {
    @Override
    public void handleLeave(String cacheName, Address leaver, int viewId) throws Exception {
       if (isShuttingDown) {
-         log.debugf("Ignoring leave request from %s for cache %s, the local cache manager is shutting down",
-               leaver, cacheName);
+         log.debug("Ignoring leave request from " + leaver + " for cache " + cacheName 
+        		 + ", the local cache manager is shutting down");
          return;
       }
       rebalancePolicy.removeLeavers(cacheName, Collections.singletonList(leaver));
@@ -192,10 +191,9 @@ public class ClusterTopologyManagerImpl implements ClusterTopologyManager {
       if (throwable != null) {
          // TODO We could try to update the pending CH such that nodes reporting errors are not considered to hold any state
          // For now we are just logging the error and proceeding as if the rebalance was successful everywhere
-         log.rebalanceError(cacheName, node, throwable);
+         log.error("Error during rebalance for cache " + cacheName + " on node " + node, throwable);
       }
-      log.debugf("Finished local rebalance for cache %s on node %s, topology id = %d", cacheName, node,
-            topologyId);
+      log.debug("Finished local rebalance for cache " + cacheName + " on node " + node + ", topology id = " + topologyId);
       RebalanceInfo rebalanceInfo = rebalanceStatusMap.get(cacheName);
       if (rebalanceInfo == null) {
          throw new CacheException(String.format("Received invalid rebalance confirmation from %s " +
@@ -209,7 +207,8 @@ public class ClusterTopologyManagerImpl implements ClusterTopologyManager {
 
    private void waitForView(int viewId) throws InterruptedException {
       if (this.viewId < viewId) {
-         log.tracef("Received a cache topology command with a higher view id: %s, our view id is %s", viewId, this.viewId);
+         log.trace("Received a cache topology command with a higher view id: " 
+        		 + viewId + ", our view id is " + this.viewId);
       }
       synchronized (viewUpdateLock) {
          while (this.viewId < viewId) {
@@ -298,11 +297,11 @@ public class ClusterTopologyManagerImpl implements ClusterTopologyManager {
    private void handleNewView(List<Address> newMembers, boolean mergeView, int newViewId) {
       // check to ensure this is not an older view
       if (newViewId <= viewId) {
-         log.tracef("Ignoring old cluster view notification: %s", newViewId);
+         log.trace("Ignoring old cluster view notification: " + newViewId);
          return;
       }
 
-      log.tracef("Received new cluster view: %s", newViewId);
+      log.trace("Received new cluster view: " + newViewId);
       boolean becameCoordinator = !isCoordinator && transport.isCoordinator();
       isCoordinator = transport.isCoordinator();
 
@@ -316,18 +315,18 @@ public class ClusterTopologyManagerImpl implements ClusterTopologyManager {
                rebalancePolicy.initCache(cacheName, topologyList);
             }
          } catch (InterruptedException e) {
-            log.tracef("Cluster state recovery interrupted because the coordinator is shutting down");
+            log.trace("Cluster state recovery interrupted because the coordinator is shutting down");
             // the CTMI has already stopped, no need to update the view id or notify waiters
             return;
          } catch (Exception e) {
             // TODO Retry?
-            log.failedToRecoverClusterState(e);
+            log.error("Failed to recover cluster state after the current node became the coordinator", e);
          }
       } else if (isCoordinator) {
          try {
             rebalancePolicy.updateMembersList(newMembers);
          } catch (Exception e) {
-            log.errorUpdatingMembersList(e);
+            log.warn("Error updating cluster member list", e);
          }
       }
 
@@ -339,7 +338,7 @@ public class ClusterTopologyManagerImpl implements ClusterTopologyManager {
    }
 
    private HashMap<String, List<CacheTopology>> recoverClusterStatus() throws Exception {
-      log.debugf("Recovering running caches in the cluster");
+      log.debug("Recovering running caches in the cluster");
       ReplicableCommand command = new CacheTopologyControlCommand(null,
          CacheTopologyControlCommand.Type.GET_STATUS, transport.getAddress(), transport.getViewId());
       Map<Address, Object> statusResponses = executeOnClusterSync(command, getGlobalTimeout());
@@ -381,7 +380,8 @@ public class ClusterTopologyManagerImpl implements ClusterTopologyManager {
          this.cacheName = cacheName;
          this.topologyId = topologyId;
          this.confirmationsNeeded = new HashSet<Address>(members);
-         log.tracef("Initialized rebalance confirmation collector %d, initial list is %s", topologyId, confirmationsNeeded);
+         log.trace("Initialized rebalance confirmation collector " + topologyId 
+        		 + ", initial list is " + confirmationsNeeded);
       }
 
       /**
@@ -396,13 +396,13 @@ public class ClusterTopologyManagerImpl implements ClusterTopologyManager {
 
             boolean removed = confirmationsNeeded.remove(node);
             if (!removed) {
-               log.tracef("Rebalance confirmation collector %d ignored confirmation for %s, which is not a member",
-                     topologyId, node);
+               log.trace("Rebalance confirmation collector " + topologyId + " ignored confirmation for " 
+            		   + node + ", which is not a member");
                return false;
             }
 
-            log.tracef("Rebalance confirmation collector %d received confirmation for %s, remaining list is %s",
-                  topologyId, node, confirmationsNeeded);
+            log.trace("Rebalance confirmation collector " + topologyId + " received confirmation for " 
+            		+ node + ", remaining list is " + confirmationsNeeded);
             return confirmationsNeeded.isEmpty();
          }
       }

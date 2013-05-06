@@ -27,11 +27,11 @@ import org.infinispan.context.InvocationContextContainer;
 import org.infinispan.context.impl.RemoteTxInvocationContext;
 import org.infinispan.interceptors.InterceptorChain;
 import org.infinispan.lifecycle.ComponentStatus;
+import org.infinispan.remoting.transport.Address;
 import org.infinispan.transaction.RemoteTransaction;
 import org.infinispan.transaction.TransactionTable;
-import org.infinispan.remoting.transport.Address;
 import org.infinispan.transaction.xa.GlobalTransaction;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -43,7 +43,7 @@ import org.infinispan.util.logging.LogFactory;
  */
 public abstract class AbstractTransactionBoundaryCommand implements TransactionBoundaryCommand {
 
-   private static final Log log = LogFactory.getLog(AbstractTransactionBoundaryCommand.class);
+   private static final ALogger log = LogFactory.getLog(AbstractTransactionBoundaryCommand.class);
    private static boolean trace = log.isTraceEnabled();
 
    protected GlobalTransaction globalTx;
@@ -107,14 +107,14 @@ public abstract class AbstractTransactionBoundaryCommand implements TransactionB
       markGtxAsRemote();
       RemoteTransaction transaction = txTable.getRemoteTransaction(globalTx);
       if (transaction == null) {
-         if (trace) log.tracef("Did not find a RemoteTransaction for %s", globalTx);
+         if (trace) log.trace("Did not find a RemoteTransaction for " + globalTx);
          return invalidRemoteTxReturnValue();
       }
       visitRemoteTransaction(transaction);
       RemoteTxInvocationContext ctxt = icc.createRemoteTxInvocationContext(
             transaction, getOrigin());
 
-      if (trace) log.tracef("About to execute tx command %s", this);
+      if (trace) log.trace("About to execute tx command " + this);
       return invoker.invoke(ctxt, this);
    }
 

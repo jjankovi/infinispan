@@ -22,12 +22,11 @@
  */
 package org.infinispan.context.impl;
 
-import javax.transaction.Transaction;
-
-import org.infinispan.transaction.AbstractCacheTransaction;
-
 import java.util.Collection;
 import java.util.Set;
+
+import org.infinispan.transaction.AbstractCacheTransaction;
+import org.transaction.Transaction;
 
 /**
  * Support class for {@link org.infinispan.context.impl.TxInvocationContext}.

@@ -22,9 +22,6 @@
  */
 package org.infinispan.util;
 
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -37,12 +34,15 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
+
 /**
  * Find infinispan classes utility
  */
 public class ClassFinder {
    
-   private static final Log log = LogFactory.getLog(ClassFinder.class); 
+   private static final ALogger log = LogFactory.getLog(ClassFinder.class); 
    
    public static final String PATH = SysPropertyActions.getProperty("java.class.path") + File.pathSeparator
             + SysPropertyActions.getProperty("surefire.test.class.path");
@@ -103,7 +103,7 @@ public class ClassFinder {
             files.add(new File(path));
          }
       }
-      log.debugf("Looking for infinispan classes in %s", files);
+      log.debug("Looking for infinispan classes in " + files);
       if (files.isEmpty()) {
          return Collections.emptyList();
       } else {
@@ -129,8 +129,8 @@ public class ClassFinder {
                claz = Util.loadClassStrict(clazz, null);
                classes.add(claz);
             } catch (NoClassDefFoundError ncdfe) {
-               log.warnf("%s has reference to a class %s that could not be loaded from classpath",
-                         cf.getAbsolutePath(), ncdfe.getMessage());
+               log.warn(cf.getAbsolutePath() + " has reference to a class " + ncdfe.getMessage() 
+            		   + " that could not be loaded from classpath");
             } catch (Throwable e) {
                // Catch all since we do not want skip iteration
                log.warn("On path " + cf.getAbsolutePath() + " could not load class "+ clazz, e);
@@ -142,7 +142,7 @@ public class ClassFinder {
             try {
                jar = new JarFile(path);
             } catch (Exception ex) {
-               log.warnf("Could not create jar file on path %s", path);
+               log.warn("Could not create jar file on path " + path);
                return classes;
             }
             try {
@@ -156,8 +156,8 @@ public class ClassFinder {
                         claz = Util.loadClassStrict(clazz, null);
                         classes.add(claz);
                      } catch (NoClassDefFoundError ncdfe) {
-                        log.warnf("%s has reference to a class %s that could not be loaded from classpath",
-                                  entry.getName(), ncdfe.getMessage());
+                        log.warn(entry.getName() + " has reference to a " +
+                        		"class " + ncdfe.getMessage() + " that could not be loaded from classpath");
                      } catch (Throwable e) {
                         // Catch all since we do not want skip iteration
                         log.warn("From jar path " + entry.getName() + " could not load class "+ clazz, e);
@@ -169,7 +169,7 @@ public class ClassFinder {
                try {
                   jar.close();
                } catch (IOException e) {
-                  log.debugf(e, "error closing jar file %s", jar);
+                  log.debug("error closing jar file " + jar, e);
                }
             }
          }

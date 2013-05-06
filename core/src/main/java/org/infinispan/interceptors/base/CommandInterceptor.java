@@ -37,7 +37,7 @@ import org.infinispan.factories.scopes.Scope;
 import org.infinispan.factories.scopes.Scopes;
 import org.infinispan.interceptors.InterceptorChain;
 import org.infinispan.remoting.InboundInvocationHandler;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -71,7 +71,7 @@ public abstract class CommandInterceptor extends AbstractVisitor {
 
    protected Configuration cacheConfiguration;
 
-   protected Log getLog() {
+   protected ALogger getLog() {
       return LogFactory.getLog(CommandInterceptor.class);
    }
 

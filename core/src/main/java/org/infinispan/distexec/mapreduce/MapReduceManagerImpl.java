@@ -33,8 +33,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.transaction.TransactionManager;
-
 import org.infinispan.Cache;
 import org.infinispan.CacheException;
 import org.infinispan.atomic.Delta;
@@ -51,8 +49,9 @@ import org.infinispan.loaders.CacheLoaderManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.remoting.transport.Address;
 import org.infinispan.util.concurrent.ConcurrentMapFactory;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
+import org.transaction.TransactionManager;
 
 /**
  * Default implementation of {@link MapReduceManager}.
@@ -65,7 +64,7 @@ import org.infinispan.util.logging.LogFactory;
  */
 public class MapReduceManagerImpl implements MapReduceManager {
 
-   private static final Log log = LogFactory.getLog(MapReduceManagerImpl.class);
+   private static final ALogger log = LogFactory.getLog(MapReduceManagerImpl.class);
 
    private Address localAddress;
    private EmbeddedCacheManager cacheManager;
@@ -115,7 +114,7 @@ public class MapReduceManagerImpl implements MapReduceManager {
       } else{
          //first hook into lifecycle
          MapReduceTaskLifecycleService taskLifecycleService = MapReduceTaskLifecycleService.getInstance();
-         log.tracef("For m/r task %s invoking %s at %s",  taskId, reduceCommand, localAddress);
+         log.trace("For m/r task " + taskId + " invoking " + reduceCommand  +" at " + localAddress);
          try {
             taskLifecycleService.onPreExecute(reducer, cache);
             for (KOut key : keys) {
@@ -129,7 +128,7 @@ public class MapReduceManagerImpl implements MapReduceManager {
                // and reduce it
                VOut reduced = reducer.reduce(key, value.iterator());
                result.put(key, reduced);
-               log.tracef("For m/r task %s reduced %s to %s at %s ", taskId, key, reduced, localAddress);     
+               log.trace("For m/r task " + taskId + " reduced " + key + " to " + reduced + " at " + localAddress);     
             }
          } finally {
             taskLifecycleService.onPostExecute(reducer);
@@ -154,7 +153,7 @@ public class MapReduceManagerImpl implements MapReduceManager {
       // hook map function into lifecycle and execute it
       MapReduceTaskLifecycleService taskLifecycleService = MapReduceTaskLifecycleService.getInstance();     
       DefaultCollector<KOut, VOut> collector = new DefaultCollector<KOut, VOut>();
-      log.tracef("For m/r task %s invoking %s with input keys %s",  mcc.getTaskId(), mcc, inputKeys);
+      log.trace("For m/r task " + mcc.getTaskId() + " invoking " + mcc + " with input keys "  + inputKeys);
       try {
          taskLifecycleService.onPreExecute(mapper, cache);
          for (KIn key : inputKeys) {           
@@ -172,7 +171,7 @@ public class MapReduceManagerImpl implements MapReduceManager {
             // load everything from CL pinned to this primary owner
             keysFromCacheLoader = filterLocalPrimaryOwner(loadAllKeysFromCacheLoaderUsingFilter(inputKeys), dm);
          }   
-         log.tracef("For m/r task %s cache loader input keys %s", mcc.getTaskId(), keysFromCacheLoader);
+         log.trace("For m/r task " + mcc.getTaskId() + " cache loader input keys " + keysFromCacheLoader);
          for (KIn key : keysFromCacheLoader) {            
             VIn value = loadValueFromCacheLoader(key);            
             if(value != null){
@@ -206,7 +205,7 @@ public class MapReduceManagerImpl implements MapReduceManager {
 
       if (combiner != null) {
          Cache<?, ?> cache = cacheManager.getCache(mcc.getCacheName());
-         log.tracef("For m/r task %s invoking combiner %s at %s",  taskId, mcc, localAddress);
+         log.trace("For m/r task " + taskId + " invoking combiner " + mcc + " at " + localAddress);
          MapReduceTaskLifecycleService taskLifecycleService = MapReduceTaskLifecycleService.getInstance();
          Map<KOut, VOut> combinedMap = new ConcurrentHashMap<KOut, VOut>();
          try {
@@ -222,7 +221,7 @@ public class MapReduceManagerImpl implements MapReduceManager {
                   combined = list.get(0);
                   combinedMap.put(e.getKey(), combined);
                }               
-               log.tracef("For m/r task %s combined %s to %s at %s" , taskId, e.getKey(), combined, localAddress);               
+               log.trace("For m/r task " + taskId + " combined " + e.getKey() + " to " + combined + " at " + localAddress);               
             }
          } finally {
             taskLifecycleService.onPostExecute(combiner);
@@ -235,7 +234,7 @@ public class MapReduceManagerImpl implements MapReduceManager {
             List<KOut> keysHashedToAddress = entry.getValue();
             try {
                tm.begin();
-               log.tracef("For m/r task %s migrating intermediate keys %s to %s",  taskId, keysHashedToAddress, entry.getKey());
+               log.trace("For m/r task " + taskId + " migrating intermediate keys " + keysHashedToAddress + " to " + entry.getKey());
                for (KOut key : keysHashedToAddress) {
                   VOut value = combinedMap.get(key);
                   DeltaAwareList<VOut> delta = new DeltaAwareList<VOut>(value);
@@ -264,7 +263,7 @@ public class MapReduceManagerImpl implements MapReduceManager {
             List<KOut> keysHashedToAddress = entry.getValue();
             try {
                tm.begin();
-               log.tracef("For m/r task %s migrating intermediate keys %s to %s",  taskId, keysHashedToAddress, entry.getKey());
+               log.trace("For m/r task " + taskId + " migrating intermediate keys " + keysHashedToAddress + " to " + entry.getKey());
                for (KOut key : keysHashedToAddress) {
                   List<VOut> value = collectedValues.get(key);
                   DeltaAwareList<VOut> delta = new DeltaAwareList<VOut>(value);
@@ -295,7 +294,7 @@ public class MapReduceManagerImpl implements MapReduceManager {
 
       if (combiner != null) {
          result = new HashMap<KOut, List<VOut>>();   
-         log.tracef("For m/r task %s invoking combiner %s at %s",  taskId, mcc, localAddress);
+         log.trace("For m/r task " + taskId + " invoking combiner " + mcc + " at " + localAddress);
          MapReduceTaskLifecycleService taskLifecycleService = MapReduceTaskLifecycleService.getInstance();
          try {
             Cache<?, ?> cache = cacheManager.getCache(mcc.getCacheName());
@@ -312,7 +311,7 @@ public class MapReduceManagerImpl implements MapReduceManager {
                }                              
                l.add(combined);
                result.put(e.getKey(), l);
-               log.tracef("For m/r task %s combined %s to %s at %s" , taskId, e.getKey(), combined, localAddress);               
+               log.trace("For m/r task " + taskId + " combined " + e.getKey() + " to " + combined + " at " + localAddress);               
             }
          } finally {
             taskLifecycleService.onPostExecute(combiner);

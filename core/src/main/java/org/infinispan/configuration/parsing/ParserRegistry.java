@@ -25,14 +25,14 @@ import java.io.InputStream;
 import java.util.ServiceLoader;
 
 import javax.xml.namespace.QName;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamReader;
 
 import org.infinispan.config.ConfigurationException;
 import org.infinispan.util.FileLookup;
 import org.infinispan.util.FileLookupFactory;
 import org.infinispan.util.Util;
 import org.jboss.staxmapper.XMLMapper;
+import org.xml.stream.XMLInputFactory;
+import org.xml.stream.XMLStreamReader;
 
 /**
  *

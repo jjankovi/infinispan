@@ -173,7 +173,7 @@ public abstract class AbstractTxLockingInterceptor extends AbstractLockingInterc
       }
 
       if (checkForPendingLocks) {
-         getLog().tracef("Checking for pending locks and then locking key %s", key);
+         getLog().trace("Checking for pending locks and then locking key " + key);
 
          long expectedEndTime = nowMillis() + cacheConfiguration.locking().lockAcquisitionTimeout();
 
@@ -198,11 +198,11 @@ public abstract class AbstractTxLockingInterceptor extends AbstractLockingInterc
          if (remaining <= 0) {
             throw newTimeoutException(key, txContext);
          } else {
-            getLog().tracef("Finished waiting for other potential lockers, trying to acquire the lock on %s", key);
+            getLog().trace("Finished waiting for other potential lockers, trying to acquire the lock on " + key);
             lockManager.acquireLock(ctx, key, remaining, skipLocking);
          }
       } else {
-         getLog().tracef("Locking key %s, no need to check for pending locks.", key);
+         getLog().trace("Locking key " + key + ", no need to check for pending locks.");
          lockManager.acquireLock(ctx, key, lockTimeout, skipLocking);
       }
    }

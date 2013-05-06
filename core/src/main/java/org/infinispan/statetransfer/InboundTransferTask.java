@@ -23,17 +23,21 @@
 
 package org.infinispan.statetransfer;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+
 import org.infinispan.commands.CommandsFactory;
 import org.infinispan.remoting.responses.Response;
 import org.infinispan.remoting.responses.SuccessfulResponse;
 import org.infinispan.remoting.rpc.ResponseMode;
 import org.infinispan.remoting.rpc.RpcManager;
 import org.infinispan.remoting.transport.Address;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import java.util.*;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * Inbound state transfer task. Fetches transactions and data segments from a remote source and applies it to local
@@ -45,7 +49,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 public class InboundTransferTask {
 
-   private static final Log log = LogFactory.getLog(InboundTransferTask.class);
+   private static final ALogger log = LogFactory.getLog(InboundTransferTask.class);
    private static final boolean trace = log.isTraceEnabled();
 
    private final Set<Integer> segments = new CopyOnWriteArraySet<Integer>();
@@ -93,7 +97,7 @@ public class InboundTransferTask {
 
    public boolean requestTransactions() {
       if (trace) {
-         log.tracef("Requesting transactions for segments %s", segments);
+         log.trace("Requesting transactions for segments " + segments);
       }
       // get transactions and locks
       StateRequestCommand cmd = commandsFactory.buildStateRequestCommand(StateRequestCommand.Type.GET_TRANSACTIONS, rpcManager.getAddress(), topologyId, segments);

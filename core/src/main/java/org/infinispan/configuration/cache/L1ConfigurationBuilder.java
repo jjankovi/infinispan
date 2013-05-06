@@ -18,11 +18,11 @@
  */
 package org.infinispan.configuration.cache;
 
-import org.infinispan.config.ConfigurationException;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.util.concurrent.TimeUnit;
+
+import org.infinispan.config.ConfigurationException;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * Configures the L1 cache behavior in 'distributed' caches instances. In any other cache modes,
@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 public class L1ConfigurationBuilder extends AbstractClusteringConfigurationChildBuilder<L1Configuration> {
 
-   private static final Log log = LogFactory.getLog(L1ConfigurationBuilder.class);
+   private static final ALogger log = LogFactory.getLog(L1ConfigurationBuilder.class);
 
    private boolean enabled = false;
    private int invalidationThreshold = 0;

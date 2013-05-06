@@ -22,9 +22,12 @@
  */
 package org.infinispan.transaction.xa.recovery;
 
-import javax.transaction.xa.Xid;
 import java.util.HashSet;
 import java.util.List;
+
+import org.transaction.xa.Xid;
+
+
 
 /**
 *  Default implementation for RecoveryIterator.

@@ -23,7 +23,9 @@
 
 package org.infinispan.transaction.xa.recovery;
 
-import javax.transaction.xa.Xid;
+import org.transaction.xa.Xid;
+
+
 
 /**
  * Interface that adds recovery required information to a {@link org.infinispan.transaction.xa.GlobalTransaction}.

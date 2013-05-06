@@ -23,13 +23,13 @@
 package org.infinispan.transaction.tm;
 
 
-import javax.transaction.HeuristicMixedException;
-import javax.transaction.HeuristicRollbackException;
-import javax.transaction.NotSupportedException;
-import javax.transaction.RollbackException;
-import javax.transaction.Status;
-import javax.transaction.SystemException;
-import javax.transaction.UserTransaction;
+import org.transaction.HeuristicMixedException;
+import org.transaction.HeuristicRollbackException;
+import org.transaction.NotSupportedException;
+import org.transaction.RollbackException;
+import org.transaction.Status;
+import org.transaction.SystemException;
+import org.transaction.UserTransaction;
 
 /**
  * @author bela

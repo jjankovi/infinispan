@@ -22,11 +22,7 @@
  */
 package org.infinispan.transaction.xa;
 
-import org.infinispan.marshall.Ids;
-import org.infinispan.remoting.transport.Address;
-import org.infinispan.util.Util;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
+import static java.util.Collections.emptySet;
 
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -34,7 +30,11 @@ import java.io.ObjectOutput;
 import java.util.Collection;
 import java.util.Set;
 
-import static java.util.Collections.emptySet;
+import org.infinispan.marshall.Ids;
+import org.infinispan.remoting.transport.Address;
+import org.infinispan.util.Util;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * This class is used when deadlock detection is enabled.
@@ -43,7 +43,7 @@ import static java.util.Collections.emptySet;
  */
 public class DldGlobalTransaction extends GlobalTransaction {
 
-   private static final Log log = LogFactory.getLog(DldGlobalTransaction.class);
+   private static final ALogger log = LogFactory.getLog(DldGlobalTransaction.class);
 
    private static final boolean trace = log.isTraceEnabled();
 
@@ -112,7 +112,7 @@ public class DldGlobalTransaction extends GlobalTransaction {
    }
 
    public void setLockIntention(Object lockIntention) {
-      if (trace) log.tracef("Setting local lock intention to %s", lockIntention);
+      if (trace) log.trace("Setting local lock intention to " + lockIntention);
       this.localLockIntention = lockIntention;
    }
 
@@ -122,7 +122,7 @@ public class DldGlobalTransaction extends GlobalTransaction {
 
    public void setRemoteLockIntention(Collection<Object> remoteLockIntention) {
       if (trace) {
-         log.tracef("Setting the remote lock intention: %s", remoteLockIntention);
+         log.trace("Setting the remote lock intention: " + remoteLockIntention);
       }
       this.remoteLockIntention = remoteLockIntention;
    }
@@ -132,8 +132,8 @@ public class DldGlobalTransaction extends GlobalTransaction {
    }
 
    public boolean hasLockAtOrigin(Collection<Object> remoteLockIntention) {
-      log.tracef("Our(%s) locks at origin are: %s. Others remote lock intention is: %s",
-                    this, locksAtOrigin, remoteLockIntention);
+      log.trace("Our(" + this + ") locks at origin are: " + locksAtOrigin 
+    		  + ". Others remote lock intention is: " + remoteLockIntention);
       for (Object key : remoteLockIntention) {
          if (this.locksAtOrigin.contains(key)) {
             return true;
@@ -143,7 +143,7 @@ public class DldGlobalTransaction extends GlobalTransaction {
    }
 
    public void setLocksHeldAtOrigin(Set<Object> locksAtOrigin) {
-      if (trace) log.tracef("Setting locks at origin for (%s) to %s", this, locksAtOrigin);
+      if (trace) log.trace("Setting locks at origin for (" + this + ") to " + locksAtOrigin);
       this.locksAtOrigin = locksAtOrigin;
    }
 

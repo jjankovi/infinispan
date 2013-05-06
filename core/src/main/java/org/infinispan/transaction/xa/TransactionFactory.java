@@ -23,6 +23,8 @@
 
 package org.infinispan.transaction.xa;
 
+import java.util.Random;
+
 import org.infinispan.commands.write.WriteCommand;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.factories.annotations.Inject;
@@ -39,11 +41,9 @@ import org.infinispan.transaction.xa.recovery.RecoveryAwareGlobalTransaction;
 import org.infinispan.transaction.xa.recovery.RecoveryAwareLocalTransaction;
 import org.infinispan.transaction.xa.recovery.RecoveryAwareRemoteTransaction;
 import org.infinispan.util.ClusterIdGenerator;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.Transaction;
-import java.util.Random;
+import org.transaction.Transaction;
 
 /**
  * Factory for transaction related sate.
@@ -52,7 +52,7 @@ import java.util.Random;
  */
 public class TransactionFactory {
 
-   private static final Log log = LogFactory.getLog(TransactionFactory.class);
+   private static final ALogger log = LogFactory.getLog(TransactionFactory.class);
 
    private TxFactoryEnum txFactoryEnum;
 
@@ -327,6 +327,6 @@ public class TransactionFactory {
             }
          }
       }
-      log.tracef("Setting factory enum to %s", txFactoryEnum);
+      log.trace("Setting factory enum to " + txFactoryEnum);
    }
 }

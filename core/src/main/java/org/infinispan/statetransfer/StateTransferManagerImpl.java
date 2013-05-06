@@ -31,7 +31,11 @@ import org.infinispan.CacheException;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.global.GlobalConfiguration;
-import org.infinispan.distribution.ch.*;
+import org.infinispan.distribution.ch.ConsistentHash;
+import org.infinispan.distribution.ch.ConsistentHashFactory;
+import org.infinispan.distribution.ch.DefaultConsistentHashFactory;
+import org.infinispan.distribution.ch.ReplicatedConsistentHashFactory;
+import org.infinispan.distribution.ch.TopologyAwareConsistentHashFactory;
 import org.infinispan.distribution.group.GroupManager;
 import org.infinispan.distribution.group.GroupingConsistentHash;
 import org.infinispan.factories.annotations.Inject;
@@ -44,7 +48,7 @@ import org.infinispan.topology.CacheJoinInfo;
 import org.infinispan.topology.CacheTopology;
 import org.infinispan.topology.CacheTopologyHandler;
 import org.infinispan.topology.LocalTopologyManager;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -54,7 +58,7 @@ import org.infinispan.util.logging.LogFactory;
 @MBean(objectName = "StateTransferManager", description = "Component that handles state transfer")
 public class StateTransferManagerImpl implements StateTransferManager {
 
-   private static final Log log = LogFactory.getLog(StateTransferManagerImpl.class);
+   private static final ALogger log = LogFactory.getLog(StateTransferManagerImpl.class);
    private static final boolean trace = log.isTraceEnabled();
 
    private StateConsumer stateConsumer;
@@ -97,7 +101,7 @@ public class StateTransferManagerImpl implements StateTransferManager {
    @Override
    public void start() throws Exception {
       if (trace) {
-         log.tracef("Starting StateTransferManager of cache %s on node %s", cacheName, rpcManager.getAddress());
+         log.trace("Starting StateTransferManager of cache " + cacheName + " on node " + rpcManager.getAddress());
       }
 
       CacheJoinInfo joinInfo = new CacheJoinInfo(
@@ -167,7 +171,7 @@ public class StateTransferManagerImpl implements StateTransferManager {
 
    private void doTopologyUpdate(CacheTopology newCacheTopology, boolean isRebalance) {
       if (trace) {
-         log.tracef("Installing new cache topology %s", newCacheTopology);
+         log.trace("Installing new cache topology " + newCacheTopology);
       }
 
       // handle grouping
@@ -193,7 +197,7 @@ public class StateTransferManagerImpl implements StateTransferManager {
    @Start(priority = 1000)
    @SuppressWarnings("unused")
    public void waitForInitialStateTransferToComplete() throws InterruptedException {
-      if (trace) log.tracef("Waiting for initial state transfer to finish");
+      if (trace) log.trace("Waiting for initial state transfer to finish");
       boolean success = initialStateTransferComplete.await(configuration.clustering().stateTransfer().timeout(), TimeUnit.MILLISECONDS);
       if (!success) {
          throw new CacheException(String.format("Initial state transfer timed out for cache %s on %s",
@@ -205,7 +209,7 @@ public class StateTransferManagerImpl implements StateTransferManager {
    @Override
    public void stop() {
       if (trace) {
-         log.tracef("Shutting down StateTransferManager of cache %s on node %s", cacheName, rpcManager.getAddress());
+         log.trace("Shutting down StateTransferManager of cache " + cacheName + " on node " + rpcManager.getAddress());
       }
       localTopologyManager.leave(cacheName);
    }

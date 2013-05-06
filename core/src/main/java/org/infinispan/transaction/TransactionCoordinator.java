@@ -22,6 +22,11 @@
  */
 package org.infinispan.transaction;
 
+import static javax.transaction.xa.XAResource.XA_OK;
+import static javax.transaction.xa.XAResource.XA_RDONLY;
+
+import java.util.List;
+
 import org.infinispan.commands.CommandsFactory;
 import org.infinispan.commands.tx.CommitCommand;
 import org.infinispan.commands.tx.PrepareCommand;
@@ -36,15 +41,10 @@ import org.infinispan.factories.annotations.Start;
 import org.infinispan.factories.annotations.Stop;
 import org.infinispan.interceptors.InterceptorChain;
 import org.infinispan.transaction.xa.GlobalTransaction;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.Transaction;
-import javax.transaction.xa.XAException;
-import java.util.List;
-
-import static javax.transaction.xa.XAResource.XA_OK;
-import static javax.transaction.xa.XAResource.XA_RDONLY;
+import org.transaction.Transaction;
+import org.transaction.xa.XAException;
 
 /**
  * Coordinates transaction prepare/commits as received from the {@link javax.transaction.TransactionManager}.
@@ -56,7 +56,7 @@ import static javax.transaction.xa.XAResource.XA_RDONLY;
  */
 public class TransactionCoordinator {
 
-   private static final Log log = LogFactory.getLog(TransactionCoordinator.class);
+   private static final ALogger log = LogFactory.getLog(TransactionCoordinator.class);
    private CommandsFactory commandsFactory;
    private InvocationContextContainer icc;
    private InterceptorChain invoker;
@@ -127,12 +127,12 @@ public class TransactionCoordinator {
       validateNotMarkedForRollback(localTransaction);
 
       if (Configurations.isOnePhaseCommit(configuration) || is1PcForAutoCommitTransaction(localTransaction)) {
-         if (trace) log.tracef("Received prepare for tx: %s. Skipping call as 1PC will be used.", localTransaction);
+         if (trace) log.trace("Received prepare for tx: " + localTransaction + ". Skipping call as 1PC will be used.");
          return XA_OK;
       }
 
       PrepareCommand prepareCommand = commandCreator.createPrepareCommand(localTransaction.getGlobalTransaction(), localTransaction.getModifications());
-      if (trace) log.tracef("Sending prepare command through the chain: %s", prepareCommand);
+      if (trace) log.trace("Sending prepare command through the chain: " + prepareCommand);
 
       LocalTxInvocationContext ctx = icc.createTxInvocationContext();
       prepareCommand.setReplayEntryWrapping(replayEntryWrapping);
@@ -140,7 +140,7 @@ public class TransactionCoordinator {
       try {
          invoker.invoke(ctx, prepareCommand);
          if (localTransaction.isReadOnly()) {
-            if (trace) log.tracef("Readonly transaction: %s", localTransaction.getGlobalTransaction());
+            if (trace) log.trace("Readonly transaction: " + localTransaction.getGlobalTransaction());
             // force a cleanup to release any objects held.  Some TMs don't call commit if it is a READ ONLY tx.  See ISPN-845
             commit(localTransaction, false);
             return XA_RDONLY;
@@ -163,7 +163,7 @@ public class TransactionCoordinator {
    }
 
    public void commit(LocalTransaction localTransaction, boolean isOnePhase) throws XAException {
-      if (trace) log.tracef("Committing transaction %s", localTransaction.getGlobalTransaction());
+      if (trace) log.trace("Committing transaction " + localTransaction.getGlobalTransaction());
       LocalTxInvocationContext ctx = icc.createTxInvocationContext();
       ctx.setLocalTransaction(localTransaction);
       if (Configurations.isOnePhaseCommit(configuration) || isOnePhase || is1PcForAutoCommitTransaction(localTransaction)) {
@@ -194,7 +194,7 @@ public class TransactionCoordinator {
          if (shuttingDown)
             log.trace("Exception while rolling back, probably because we're shutting down.");
          else
-            log.errorRollingBack(e);
+            log.error("Exception while rollback", e);
 
          final Transaction transaction = localTransaction.getTransaction();
          //this might be possible if the cache has stopped and TM still holds a reference to the XAResource
@@ -206,16 +206,17 @@ public class TransactionCoordinator {
    }
 
    private void handleCommitFailure(Throwable e, LocalTransaction localTransaction, boolean onePhaseCommit) throws XAException {
-      if (trace) log.tracef("Couldn't commit transaction %s, trying to rollback.", localTransaction);
+      if (trace) log.trace("Couldn't commit transaction " + localTransaction + ", trying to rollback.");
       if (onePhaseCommit) {
-         log.errorProcessing1pcPrepareCommand(e);
+         log.error("Error while processing a prepare in a single-phase transaction", e);
       } else {
-         log.errorProcessing2pcCommitCommand(e);
+         log.error("Error while processing a commit in a two-phase transaction", e);
       }
       try {
          rollbackInternal(localTransaction);
       } catch (Throwable e1) {
-         log.couldNotRollbackPrepared1PcTransaction(localTransaction, e1);
+         log.warn("Could not rollback prepared 1PC transaction. This transaction will be rolled back " +
+         		"by the recovery process, if enabled. Transaction: " + localTransaction, e1);
          // inform the TM that a resource manager error has occurred in the transaction branch (XAER_RMERR).
          throw new XAException(XAException.XAER_RMERR);
       } finally {
@@ -225,7 +226,7 @@ public class TransactionCoordinator {
    }
 
    private void rollbackInternal(LocalTransaction localTransaction) throws Throwable {
-      if (trace) log.tracef("rollback transaction %s ", localTransaction.getGlobalTransaction());
+      if (trace) log.trace("rollback transaction " + localTransaction.getGlobalTransaction());
       RollbackCommand rollbackCommand = commandsFactory.buildRollbackCommand(localTransaction.getGlobalTransaction());
       LocalTxInvocationContext ctx = icc.createTxInvocationContext();
       ctx.setLocalTransaction(localTransaction);
@@ -235,7 +236,7 @@ public class TransactionCoordinator {
 
    private void validateNotMarkedForRollback(LocalTransaction localTransaction) throws XAException {
       if (localTransaction.isMarkedForRollback()) {
-         if (trace) log.tracef("Transaction already marked for rollback. Forcing rollback for %s", localTransaction);
+         if (trace) log.trace("Transaction already marked for rollback. Forcing rollback for " + localTransaction);
          rollback(localTransaction);
          throw new XAException(XAException.XA_RBROLLBACK);
       }

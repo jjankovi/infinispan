@@ -19,6 +19,8 @@
 
 package org.infinispan.topology;
 
+import static org.infinispan.factories.KnownComponentNames.ASYNC_TRANSPORT_EXECUTOR;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,10 +44,8 @@ import org.infinispan.remoting.rpc.ResponseMode;
 import org.infinispan.remoting.transport.Address;
 import org.infinispan.remoting.transport.Transport;
 import org.infinispan.util.concurrent.ConcurrentMapFactory;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
-
-import static org.infinispan.factories.KnownComponentNames.ASYNC_TRANSPORT_EXECUTOR;
 
 /**
  * The {@code LocalTopologyManager} implementation.
@@ -54,7 +54,7 @@ import static org.infinispan.factories.KnownComponentNames.ASYNC_TRANSPORT_EXECU
  * @since 5.2
  */
 public class LocalTopologyManagerImpl implements LocalTopologyManager {
-   private static Log log = LogFactory.getLog(LocalTopologyManagerImpl.class);
+   private static ALogger log = LogFactory.getLog(LocalTopologyManagerImpl.class);
 
    private Transport transport;
    private ExecutorService asyncTransportExecutor;
@@ -87,7 +87,7 @@ public class LocalTopologyManagerImpl implements LocalTopologyManager {
    @Override
    public CacheTopology join(String cacheName, CacheJoinInfo joinInfo, CacheTopologyHandler stm)
          throws Exception {
-      log.debugf("Node %s joining cache %s", transport.getAddress(), cacheName);
+      log.debug("Node " + transport.getAddress() + " joining cache " + cacheName);
       LocalCacheStatus cacheStatus = new LocalCacheStatus(joinInfo, stm);
       runningCaches.put(cacheName, cacheStatus);
 
@@ -105,7 +105,7 @@ public class LocalTopologyManagerImpl implements LocalTopologyManager {
                return initialTopology;
             }
          } catch (Exception e) {
-            log.debugf(e, "Error sending join request for cache %s to coordinator", cacheName);
+            log.debug("Error sending join request for cache " + cacheName + " to coordinator", e);
             if (endTime <= System.nanoTime()) {
                throw e;
             }
@@ -117,7 +117,7 @@ public class LocalTopologyManagerImpl implements LocalTopologyManager {
 
    @Override
    public void leave(String cacheName) {
-      log.debugf("Node %s leaving cache %s", transport.getAddress(), cacheName);
+      log.debug("Node " + transport.getAddress() + " leaving cache " +  cacheName);
       runningCaches.remove(cacheName);
 
       ReplicableCommand command = new CacheTopologyControlCommand(cacheName,
@@ -125,7 +125,7 @@ public class LocalTopologyManagerImpl implements LocalTopologyManager {
       try {
          executeOnCoordinatorAsync(command);
       } catch (Exception e) {
-         log.debugf(e, "Error sending the leave request for cache %s to coordinator", cacheName);
+         log.debug("Error sending the leave request for cache " + cacheName + " to coordinator", e);
       }
    }
 
@@ -139,8 +139,7 @@ public class LocalTopologyManagerImpl implements LocalTopologyManager {
       try {
          executeOnCoordinatorAsync(command);
       } catch (Exception e) {
-         log.debugf(e, "Error sending the rebalance completed notification for cache %s to the coordinator",
-               cacheName);
+         log.debug("Error sending the rebalance completed notification for cache " + cacheName + " to the coordinator", e);
       }
    }
 
@@ -159,28 +158,27 @@ public class LocalTopologyManagerImpl implements LocalTopologyManager {
    @Override
    public void handleConsistentHashUpdate(String cacheName, CacheTopology cacheTopology, int viewId) throws InterruptedException {
       if (!running) {
-         log.debugf("Ignoring consistent hash update %s for cache %s, the local cache manager is shutting down",
-               cacheTopology.getTopologyId(), cacheName);
+         log.debug("Ignoring consistent hash update " + cacheTopology.getTopologyId() 
+        		 + " for cache " + cacheName + ", the local cache manager is shutting down");
          return;
       }
       waitForView(viewId);
 
       LocalCacheStatus cacheStatus = runningCaches.get(cacheName);
       if (cacheStatus == null) {
-         log.tracef("Ignoring consistent hash update %s for cache %s that doesn't exist locally",
-               cacheTopology.getTopologyId(), cacheName);
+         log.trace("Ignoring consistent hash update " +cacheTopology.getTopologyId() 
+        		 + " for cache " + cacheName + " that doesn't exist locally");
          return;
       }
 
       synchronized (cacheStatus) {
          if (cacheStatus.getTopology() != null && cacheStatus.getTopology().getTopologyId() > cacheTopology.getTopologyId()){
-            log.tracef("Ignoring consistent hash update %s for cache %s, we have already received a newer topology %s",
-                  cacheTopology.getTopologyId(), cacheName, cacheStatus.getTopology().getTopologyId());
+            log.trace("Ignoring consistent hash update " + cacheTopology.getTopologyId() 
+            		+ " for cache " + cacheName + ", we have already received a newer topology " + cacheStatus.getTopology().getTopologyId());
             return;
          }
 
-         log.debugf("Updating local consistent hash(es) for cache %s: new topology = %s",
-               cacheName, cacheTopology);
+         log.debug("Updating local consistent hash(es) for cache " + cacheName + ": new topology = " + cacheTopology);
          cacheStatus.setTopology(cacheTopology);
          ConsistentHash unionCH = null;
          if (cacheTopology.getPendingCH() != null) {
@@ -198,16 +196,16 @@ public class LocalTopologyManagerImpl implements LocalTopologyManager {
    @Override
    public void handleRebalance(String cacheName, CacheTopology cacheTopology, int viewId) throws InterruptedException {
       if (!running) {
-         log.debugf("Ignoring rebalance request %s for cache %s, the local cache manager is shutting down",
-               cacheTopology.getTopologyId(), cacheName);
+         log.debug("Ignoring rebalance request " + cacheTopology.getTopologyId() 
+        		 + " for cache " + cacheName + ", the local cache manager is shutting down");
          return;
       }
       waitForView(viewId);
 
       LocalCacheStatus cacheStatus = runningCaches.get(cacheName);
       if (cacheStatus == null) {
-         log.tracef("Ignoring rebalance %s for cache %s that doesn't exist locally",
-               cacheTopology.getTopologyId(), cacheName);
+         log.trace("Ignoring rebalance " + cacheTopology.getTopologyId() 
+        		 + " for cache " + cacheName + " that doesn't exist locally");
          return;
       }
 
@@ -216,11 +214,11 @@ public class LocalTopologyManagerImpl implements LocalTopologyManager {
          if (existingTopology != null && cacheTopology.getTopologyId() < existingTopology.getTopologyId()) {
             // Start rebalance commands are sent asynchronously to the entire cluster
             // So it's possible to receive an old one on a joiner after the joiner has already become a member.
-            log.debugf("Ignoring old rebalance for cache %s: %s", cacheName, cacheTopology.getTopologyId());
+            log.debug("Ignoring old rebalance for cache " + cacheName + ": %s" +  cacheTopology.getTopologyId());
             return;
          }
 
-         log.debugf("Starting local rebalance for cache %s, topology = %s", cacheName, cacheTopology);
+         log.debug("Starting local rebalance for cache " + cacheName + ", topology = " + cacheTopology);
          cacheStatus.setTopology(cacheTopology);
       }
 
@@ -238,7 +236,7 @@ public class LocalTopologyManagerImpl implements LocalTopologyManager {
 
    private void waitForView(int viewId) throws InterruptedException {
       if (transport.getViewId() < viewId) {
-         log.tracef("Received a cache topology command with a higher view id: %s, our view id is %s", viewId,
+         log.trace("Received a cache topology command with a higher view id: " + viewId + ", our view id is " + 
                transport.getViewId());
       }
       while (transport.getViewId() < viewId) {

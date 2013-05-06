@@ -19,10 +19,10 @@
 
 package org.infinispan.xsite;
 
-import org.infinispan.Cache;
-
-import javax.transaction.Transaction;
 import java.util.Map;
+
+import org.infinispan.Cache;
+import org.transaction.Transaction;
 
 /**
  * Used for implementing custom policies in case of communication failures with a remote site. The handle methods are

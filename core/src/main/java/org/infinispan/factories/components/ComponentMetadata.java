@@ -58,7 +58,11 @@ import java.util.Map;
  * @see ComponentMetadataRepo
  */
 public class ComponentMetadata implements Serializable {
-   public static final InjectMetadata[] EMPTY_INJECT_METHODS = {};
+   /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+public static final InjectMetadata[] EMPTY_INJECT_METHODS = {};
    public static final PrioritizedMethodMetadata[] EMPTY_PRIORITIZED_METHODS = {};
 
    private String name;
@@ -203,7 +207,11 @@ public class ComponentMetadata implements Serializable {
     * This class encapsulates metadata on a prioritized method, such as one annotated with {@link Start} or {@link @Stop}
     */
    public static class PrioritizedMethodMetadata implements Serializable {
-      String methodName;
+      /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	String methodName;
       transient Method method;
       int priority;
 

@@ -26,7 +26,7 @@ package org.infinispan.statetransfer;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -37,7 +37,7 @@ import org.infinispan.util.logging.LogFactory;
  * @since 5.2
  */
 public class StateTransferLockImpl implements StateTransferLock {
-   private static final Log log = LogFactory.getLog(StateTransferLockImpl.class);
+   private static final ALogger log = LogFactory.getLog(StateTransferLockImpl.class);
 
    private final ReadWriteLock ownershipLock = new ReentrantReadWriteLock();
 
@@ -80,8 +80,8 @@ public class StateTransferLockImpl implements StateTransferLock {
       if (transactionDataTopologyId >= expectedTopologyId)
          return;
 
-      log.tracef("Waiting for transaction data for topology %d, current topology is %d", expectedTopologyId,
-            transactionDataTopologyId);
+      log.trace("Waiting for transaction data for topology " + expectedTopologyId + ", current topology is " 
+    		  + transactionDataTopologyId);
       synchronized (transactionDataLock) {
          // Do the comparison inside the synchronized lock
          // otherwise the setter might be able to call notifyAll before we wait()
@@ -104,7 +104,7 @@ public class StateTransferLockImpl implements StateTransferLock {
       if (topologyId >= expectedTopologyId)
          return;
 
-      log.tracef("Waiting for topology %d to be installed, current topology is %d", expectedTopologyId,
+      log.trace("Waiting for topology " + expectedTopologyId + " to be installed, current topology is " + 
             topologyId);
       synchronized (topologyLock) {
          // Do the comparison inside the synchronized lock

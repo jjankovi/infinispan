@@ -24,8 +24,7 @@ package org.infinispan.transaction.synchronization;
 
 import org.infinispan.transaction.LocalTransaction;
 import org.infinispan.transaction.xa.GlobalTransaction;
-
-import javax.transaction.Transaction;
+import org.transaction.Transaction;
 
 /**
  * {@link LocalTransaction} implementation to be used with {@link SynchronizationAdapter}.

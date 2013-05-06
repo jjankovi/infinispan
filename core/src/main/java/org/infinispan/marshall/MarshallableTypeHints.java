@@ -19,11 +19,11 @@
 
 package org.infinispan.marshall;
 
-import org.infinispan.util.concurrent.ConcurrentMapFactory;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
 import java.util.concurrent.ConcurrentMap;
+
+import org.infinispan.util.concurrent.ConcurrentMapFactory;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
 
 /**
  * Class providing hints about marshallable types, such as whether a particular
@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public final class MarshallableTypeHints {
 
-   private static final Log log = LogFactory.getLog(MarshallableTypeHints.class);
+   private static final ALogger log = LogFactory.getLog(MarshallableTypeHints.class);
    private static final boolean trace = log.isTraceEnabled();
 
    /**
@@ -63,8 +63,8 @@ public final class MarshallableTypeHints {
             marshallingType = prev;
          } else {
             if (trace) {
-               log.tracef("Cache a buffer size predictor for '%s' assuming " +
-                     "its serializability is unknown", type.getName());
+               log.trace("Cache a buffer size predictor for '" + type.getName() + "' assuming " +
+                     "its serializability is unknown");
             }
          }
       }
@@ -115,13 +115,11 @@ public final class MarshallableTypeHints {
          boolean replaced = typeHints.replace(type, marshallType, new MarshallingType(
                Boolean.valueOf(isMarshallable), marshallType.sizePredictor));
          if (replaced && trace) {
-            log.tracef("Replacing '%s' type to be marshallable=%b",
-                  type.getName(), isMarshallable);
+            log.trace("Replacing '" + type.getName() + "' type to be marshallable=" + isMarshallable);
          }
       } else if (marshallType == null) {
          if (trace) {
-            log.tracef("Cache '%s' type to be marshallable=%b",
-                  type.getName(), isMarshallable);
+        	 log.trace("Replacing '" + type.getName() + "' type to be marshallable=" + isMarshallable);
          }
 
          typeHints.put(type, new MarshallingType(

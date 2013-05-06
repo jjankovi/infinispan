@@ -27,12 +27,12 @@ import java.util.ServiceLoader;
 import org.infinispan.Cache;
 import org.infinispan.distexec.mapreduce.Mapper;
 import org.infinispan.distexec.mapreduce.Reducer;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 public final class MapReduceTaskLifecycleService {
 
-   private static final Log log = LogFactory.getLog(MapReduceTaskLifecycleService.class);
+   private static final ALogger log = LogFactory.getLog(MapReduceTaskLifecycleService.class);
    private static MapReduceTaskLifecycleService service;
    private List<MapReduceTaskLifecycle> lifecycles;
 
@@ -57,9 +57,9 @@ public final class MapReduceTaskLifecycleService {
             l.onPreExecute(mapper, inputCache);
          }
       } catch (ServiceConfigurationError serviceError) {
-         log.errorReadingProperties(new IOException(
+         log.warn("Unexpected error reading properties", (new IOException(
                   "Could not properly load and instantiate DistributedTaskLifecycle service ",
-                  serviceError));
+                  serviceError)));
       }
    }
 
@@ -69,9 +69,9 @@ public final class MapReduceTaskLifecycleService {
             l.onPostExecute(mapper);
          }
       } catch (ServiceConfigurationError serviceError) {
-         log.errorReadingProperties(new IOException(
+    	  log.warn("Unexpected error reading properties", (new IOException(
                   "Could not properly load and instantiate DistributedTaskLifecycle service ",
-                  serviceError));
+                  serviceError)));
       }
    }
 
@@ -81,9 +81,9 @@ public final class MapReduceTaskLifecycleService {
             l.onPreExecute(reducer, inputCache);
          }
       } catch (ServiceConfigurationError serviceError) {
-         log.errorReadingProperties(new IOException(
+    	  log.warn("Unexpected error reading properties", (new IOException(
                   "Could not properly load and instantiate DistributedTaskLifecycle service ",
-                  serviceError));
+                  serviceError)));
       }
    }
 
@@ -93,9 +93,9 @@ public final class MapReduceTaskLifecycleService {
             l.onPostExecute(reducer);
          }
       } catch (ServiceConfigurationError serviceError) {
-         log.errorReadingProperties(new IOException(
+    	  log.warn("Unexpected error reading properties", (new IOException(
                   "Could not properly load and instantiate DistributedTaskLifecycle service ",
-                  serviceError));
+                  serviceError)));
       }
    }
 }

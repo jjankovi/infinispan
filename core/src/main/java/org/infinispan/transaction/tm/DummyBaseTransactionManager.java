@@ -23,20 +23,20 @@
 package org.infinispan.transaction.tm;
 
 
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.HeuristicMixedException;
-import javax.transaction.HeuristicRollbackException;
-import javax.transaction.InvalidTransactionException;
-import javax.transaction.NotSupportedException;
-import javax.transaction.RollbackException;
-import javax.transaction.Status;
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
 import java.io.Serializable;
 import java.util.UUID;
+
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
+import org.transaction.HeuristicMixedException;
+import org.transaction.HeuristicRollbackException;
+import org.transaction.InvalidTransactionException;
+import org.transaction.NotSupportedException;
+import org.transaction.RollbackException;
+import org.transaction.Status;
+import org.transaction.SystemException;
+import org.transaction.Transaction;
+import org.transaction.TransactionManager;
 
 /**
  * @author bela
@@ -45,7 +45,7 @@ import java.util.UUID;
 public class DummyBaseTransactionManager implements TransactionManager, Serializable {
    static ThreadLocal<DummyTransaction> thread_local = new ThreadLocal<DummyTransaction>();
    private static final long serialVersionUID = -6716097342564237376l;
-   private static final Log log = LogFactory.getLog(DummyBaseTransactionManager.class);
+   private static final ALogger log = LogFactory.getLog(DummyBaseTransactionManager.class);
    private static final boolean trace = log.isTraceEnabled();
    final UUID transactionManagerId = UUID.randomUUID();
    private boolean useXaXid = false;
@@ -199,7 +199,7 @@ public class DummyBaseTransactionManager implements TransactionManager, Serializ
    public Transaction suspend() throws SystemException {
       Transaction retval = getTransaction();
       setTransaction(null);
-      if (trace) log.tracef("Suspending tx %s", retval);
+      if (trace) log.trace("Suspending tx " + retval);
       return retval;
    }
 
@@ -215,7 +215,7 @@ public class DummyBaseTransactionManager implements TransactionManager, Serializ
     */
    @Override
    public void resume(Transaction tx) throws InvalidTransactionException, IllegalStateException, SystemException {
-      if (trace) log.tracef("Resuming tx %s", tx);
+      if (trace) log.trace("Resuming tx " + tx);
       setTransaction(tx);
    }
 

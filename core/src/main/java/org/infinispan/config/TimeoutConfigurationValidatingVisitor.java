@@ -24,7 +24,7 @@ package org.infinispan.config;
 
 import org.infinispan.config.Configuration.CacheMode;
 import org.infinispan.loaders.decorators.AsyncStoreConfig;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -37,7 +37,7 @@ import org.infinispan.util.logging.LogFactory;
  */
 public class TimeoutConfigurationValidatingVisitor extends AbstractConfigurationBeanVisitor {
 
-   private static final Log log = LogFactory.getLog(TimeoutConfigurationValidatingVisitor.class);
+   private static final ALogger log = LogFactory.getLog(TimeoutConfigurationValidatingVisitor.class);
 
    private AsyncStoreConfig asyncType = null;
    private GlobalConfiguration global = null;
@@ -58,30 +58,36 @@ public class TimeoutConfigurationValidatingVisitor extends AbstractConfiguration
       boolean nonLocalCache = bean.getCacheMode() != CacheMode.LOCAL && global.getTransportClass() != null;
       if(nonLocalCache){
          if (asyncType != null && asyncType.getFlushLockTimeout() > asyncType.getShutdownTimeout())
-            log.invalidTimeoutValue("<async>: flushLockTimeout ", asyncType.getFlushLockTimeout(),
-                     "<async>: shutdownTimeout ", asyncType.getShutdownTimeout());
+            log.warn("Invalid <async>: flushLockTimeout  value of " + asyncType.getFlushLockTimeout() + 
+            		". It can not be higher than <async>: shutdownTimeout  which is " + 
+            		asyncType.getShutdownTimeout());
    
          if (asyncType != null && asyncType.getShutdownTimeout() > bean.getCacheStopTimeout())
-            log.invalidTimeoutValue("<async>: shutdownTimeout ", asyncType.getShutdownTimeout(),
-                     "<transaction>: cacheStopTimeout ", bean.getCacheStopTimeout());
+        	 log.warn("Invalid <async>: shutdownTimeout value of " + asyncType.getShutdownTimeout() + 
+             		". It can not be higher than <transaction>: cacheStopTimeout which is " + 
+             		bean.getCacheStopTimeout());
+        	    	 
    
          if (bean.getDeadlockDetectionSpinDuration() > bean.getLockAcquisitionTimeout())
-            log.invalidTimeoutValue("<deadlockDetection>: spinDuration",
-                     bean.getDeadlockDetectionSpinDuration(), "<locking>:lockAcquisitionTimeout ",
-                     bean.getLockAcquisitionTimeout());
-   
+        	 log.warn("<deadlockDetection>: spinDuration of " + bean.getDeadlockDetectionSpinDuration() + 
+              		". It can not be higher than <locking>:lockAcquisitionTimeout which is " + 
+              		bean.getLockAcquisitionTimeout());
+        	
          if (asyncType != null && bean.getLockAcquisitionTimeout() > bean.getSyncReplTimeout())
-            log.invalidTimeoutValue("<locking>:lockAcquisitionTimeout ",
-                     bean.getLockAcquisitionTimeout(), "<sync>:replTimeout", bean.getSyncReplTimeout());
-   
+        	 log.warn("<locking>:lockAcquisitionTimeout of " + bean.getLockAcquisitionTimeout() + 
+               		". It can not be higher than <sync>:replTimeout which is " + 
+               		bean.getSyncReplTimeout());
+        	 
          if (asyncType != null && bean.getSyncReplTimeout() > global.getDistributedSyncTimeout())
-            log.invalidTimeoutValue("<sync>:replTimeout", bean.getSyncReplTimeout(),
-                     "<transport>: distributedSyncTimeout", global.getDistributedSyncTimeout());
-   
+        	 log.warn("<sync>:replTimeout of " + bean.getSyncReplTimeout() + 
+                		". It can not be higher than <transport>: distributedSyncTimeout which is " + 
+                		global.getDistributedSyncTimeout());
+        	 
          if (global.getDistributedSyncTimeout() > bean.getStateRetrievalTimeout())
-            log.invalidTimeoutValue("<transport>: distributedSyncTimeout", global.getDistributedSyncTimeout(),
-                     "<stateRetrieval>:timeout", bean.getStateRetrievalTimeout());
-      }
+        	 log.warn("<transport>: distributedSyncTimeout of " + global.getDistributedSyncTimeout() + 
+             		". It can not be higher than <stateRetrieval>:timeou which is " + 
+             		bean.getStateRetrievalTimeout());
+         }
 
    }
 }

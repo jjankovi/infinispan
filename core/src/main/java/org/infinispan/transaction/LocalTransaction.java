@@ -23,15 +23,6 @@
 
 package org.infinispan.transaction;
 
-import org.infinispan.CacheException;
-import org.infinispan.commands.write.WriteCommand;
-import org.infinispan.container.entries.CacheEntry;
-import org.infinispan.remoting.transport.Address;
-import org.infinispan.transaction.xa.GlobalTransaction;
-import org.infinispan.util.logging.Log;
-import org.infinispan.util.logging.LogFactory;
-
-import javax.transaction.Transaction;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,6 +32,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.infinispan.CacheException;
+import org.infinispan.commands.write.WriteCommand;
+import org.infinispan.container.entries.CacheEntry;
+import org.infinispan.remoting.transport.Address;
+import org.infinispan.transaction.xa.GlobalTransaction;
+import org.infinispan.util.logging.ALogger;
+import org.infinispan.util.logging.LogFactory;
+import org.transaction.Transaction;
+
 /**
  * Object that holds transaction's state on the node where it originated; as opposed to {@link RemoteTransaction}.
  *
@@ -49,7 +49,7 @@ import java.util.Set;
  */
 public abstract class LocalTransaction extends AbstractCacheTransaction {
 
-   private static final Log log = LogFactory.getLog(LocalTransaction.class);
+   private static final ALogger log = LogFactory.getLog(LocalTransaction.class);
    private static final boolean trace = log.isTraceEnabled();
 
    private Set<Address> remoteLockedNodes;
@@ -71,7 +71,7 @@ public abstract class LocalTransaction extends AbstractCacheTransaction {
    }
 
    public void addModification(WriteCommand mod) {
-      if (trace) log.tracef("Adding modification %s. Mod list is %s", mod, modifications);
+      if (trace) log.trace("Adding modification " + mod + ". Mod list is " + modifications);
       if (modifications == null) {
          // we need to synchronize this collection to be able to get a valid snapshot from another thread during state transfer
          modifications = Collections.synchronizedList(new LinkedList<WriteCommand>());
@@ -80,7 +80,7 @@ public abstract class LocalTransaction extends AbstractCacheTransaction {
    }
 
    public void locksAcquired(Collection<Address> nodes) {
-      if (trace) log.tracef("Adding remote locks on %s. Remote locks are %s", nodes, remoteLockedNodes);
+      if (trace) log.trace("Adding remote locks on " + nodes + ". Remote locks are " + remoteLockedNodes);
       if (remoteLockedNodes == null)
          remoteLockedNodes = new HashSet<Address>(nodes);
       else

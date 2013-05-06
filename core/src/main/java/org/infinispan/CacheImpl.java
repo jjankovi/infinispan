@@ -22,6 +22,26 @@
  */
 package org.infinispan;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.infinispan.context.Flag.FAIL_SILENTLY;
+import static org.infinispan.context.Flag.FORCE_ASYNCHRONOUS;
+import static org.infinispan.context.Flag.PUT_FOR_EXTERNAL_READ;
+import static org.infinispan.context.Flag.ZERO_LOCK_ACQUISITION_TIMEOUT;
+import static org.infinispan.context.InvocationContextContainer.UNBOUNDED;
+import static org.infinispan.factories.KnownComponentNames.ASYNC_TRANSPORT_EXECUTOR;
+import static org.infinispan.factories.KnownComponentNames.CACHE_MARSHALLER;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+
 import org.infinispan.atomic.Delta;
 import org.infinispan.batch.BatchContainer;
 import org.infinispan.commands.CommandsFactory;
@@ -39,9 +59,9 @@ import org.infinispan.commands.write.PutKeyValueCommand;
 import org.infinispan.commands.write.PutMapCommand;
 import org.infinispan.commands.write.RemoveCommand;
 import org.infinispan.commands.write.ReplaceCommand;
+import org.infinispan.config.ConfigurationException;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.LegacyConfigurationAdaptor;
-import org.infinispan.config.ConfigurationException;
 import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.container.DataContainer;
 import org.infinispan.container.entries.InternalCacheEntry;
@@ -80,32 +100,16 @@ import org.infinispan.util.concurrent.DeferredReturnFuture;
 import org.infinispan.util.concurrent.NotifyingFuture;
 import org.infinispan.util.concurrent.NotifyingNotifiableFuture;
 import org.infinispan.util.concurrent.locks.LockManager;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 import org.rhq.helpers.pluginAnnotations.agent.DataType;
 import org.rhq.helpers.pluginAnnotations.agent.DisplayType;
 import org.rhq.helpers.pluginAnnotations.agent.Metric;
 import org.rhq.helpers.pluginAnnotations.agent.Operation;
-
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
-import javax.transaction.xa.XAResource;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.infinispan.context.Flag.*;
-import static org.infinispan.context.InvocationContextContainer.*;
-import static org.infinispan.factories.KnownComponentNames.*;
+import org.transaction.SystemException;
+import org.transaction.Transaction;
+import org.transaction.TransactionManager;
+import org.transaction.xa.XAResource;
 
 /**
  * @author Mircea.Markus@jboss.com
@@ -131,7 +135,7 @@ public class CacheImpl<K, V> extends CacheSupport<K, V> implements AdvancedCache
    private final String name;
    private EvictionManager evictionManager;
    private DataContainer dataContainer;
-   private static final Log log = LogFactory.getLog(CacheImpl.class);
+   private static final ALogger log = LogFactory.getLog(CacheImpl.class);
    private static final boolean trace = log.isTraceEnabled();
    private EmbeddedCacheManager cacheManager;
    // this is never used here but should be injected - this is a hack to make sure the ResponseGenerator is properly constructed if needed.
@@ -457,7 +461,7 @@ public class CacheImpl<K, V> extends CacheSupport<K, V> implements AdvancedCache
       }
       if (txInjected) {
          ((TxInvocationContext) invocationContext).setImplicitTransaction(true);
-         if (trace) log.tracef("Marked tx as implicit.");
+         if (trace) log.trace("Marked tx as implicit.");
       }
       return invocationContext;
    }
@@ -517,7 +521,7 @@ public class CacheImpl<K, V> extends CacheSupport<K, V> implements AdvancedCache
       componentRegistry.start();
       defaultLifespan = config.expiration().lifespan();
       defaultMaxIdleTime = config.expiration().maxIdle();
-      if (log.isDebugEnabled()) log.debugf("Started cache %s on %s", getName(), getCacheManager().getAddress());
+      if (log.isDebugEnabled()) log.debug("Started cache " + getName() + "on " + getCacheManager().getAddress());
    }
 
    @Override
@@ -528,7 +532,7 @@ public class CacheImpl<K, V> extends CacheSupport<K, V> implements AdvancedCache
    }
 
    void stop(ClassLoader explicitClassLoader) {
-      if (log.isDebugEnabled()) log.debugf("Stopping cache %s on %s", getName(), getCacheManager().getAddress());
+      if (log.isDebugEnabled()) log.debug("Stopping cache " + getName() + "on " + getCacheManager().getAddress());
       componentRegistry.stop();
    }
 
@@ -1004,11 +1008,11 @@ public class CacheImpl<K, V> extends CacheSupport<K, V> implements AdvancedCache
 
       if (txInjected) {
          if (trace)
-            log.tracef("Committing transaction as it was implicit: %s", getOngoingTransaction());
+            log.trace("Committing transaction as it was implicit: " + getOngoingTransaction());
          try {
             transactionManager.commit();
          } catch (Throwable e) {
-            log.couldNotCompleteInjectedTransaction(e);
+            log.warn("Could not complete injected transaction." + e);
             tryRollback();
             throw new CacheException("Could not commit implicit transaction", e);
          }

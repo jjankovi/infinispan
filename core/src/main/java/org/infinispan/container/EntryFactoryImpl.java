@@ -43,7 +43,7 @@ import org.infinispan.factories.annotations.Inject;
 import org.infinispan.factories.annotations.Start;
 import org.infinispan.notifications.cachelistener.CacheNotifier;
 import org.infinispan.util.concurrent.IsolationLevel;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -54,7 +54,7 @@ import org.infinispan.util.logging.LogFactory;
  */
 public class EntryFactoryImpl implements EntryFactory {
 
-   private static final Log log = LogFactory.getLog(EntryFactoryImpl.class);
+   private static final ALogger log = LogFactory.getLog(EntryFactoryImpl.class);
    private final boolean trace = log.isTraceEnabled();
    
    protected boolean useRepeatableRead;
@@ -204,13 +204,13 @@ public class EntryFactoryImpl implements EntryFactory {
 
    private CacheEntry getFromContext(InvocationContext ctx, Object key) {
       final CacheEntry cacheEntry = ctx.lookupEntry(key);
-      if (trace) log.tracef("Exists in context? %s ", cacheEntry);
+      if (trace) log.trace("Exists in context? " + cacheEntry);
       return cacheEntry;
    }
 
    private InternalCacheEntry getFromContainer(Object key) {
       final InternalCacheEntry ice = container.get(key);
-      if (trace) log.tracef("Retrieved from container %s", ice);
+      if (trace) log.trace("Retrieved from container " + ice);
       return ice;
    }
 

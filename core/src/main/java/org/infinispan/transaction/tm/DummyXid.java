@@ -22,13 +22,13 @@
  */
 package org.infinispan.transaction.tm;
 
-import org.infinispan.io.UnsignedNumeric;
-import org.infinispan.util.Util;
-
-import javax.transaction.xa.Xid;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.infinispan.io.UnsignedNumeric;
+import org.infinispan.util.Util;
+import org.transaction.xa.Xid;
 
 /**
  * Implementation of Xid.

@@ -31,7 +31,7 @@ import org.infinispan.commands.tx.RollbackCommand;
 import org.infinispan.context.InvocationContext;
 import org.infinispan.context.impl.TxInvocationContext;
 import org.infinispan.interceptors.base.CommandInterceptor;
-import org.infinispan.util.logging.Log;
+import org.infinispan.util.logging.ALogger;
 import org.infinispan.util.logging.LogFactory;
 
 /**
@@ -45,11 +45,11 @@ import org.infinispan.util.logging.LogFactory;
  */
 public class CallInterceptor extends CommandInterceptor {
 
-   private static final Log log = LogFactory.getLog(CallInterceptor.class);
+   private static final ALogger log = LogFactory.getLog(CallInterceptor.class);
    private static final boolean trace = log.isTraceEnabled();
 
    @Override
-   protected Log getLog() {
+   protected ALogger getLog() {
       return log;
    }
 

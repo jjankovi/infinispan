@@ -22,23 +22,21 @@
  */
 package org.infinispan.util.logging;
 
-import org.jboss.logging.Logger;
+import org.apache.log4j.Logger;
 import org.jboss.logging.NDC;
 
 /**
- * Factory that creates {@link Log} instances.
+ * Factory that creates {@link Logger} instances.
  *
  * @author Manik Surtani
  * @since 4.0
  */
 public class LogFactory {
 
-   public static Log getLog(Class<?> clazz) {
-      return Logger.getMessageLogger(Log.class, clazz.getName());
-   }
-
-   public static <T> T getLog(Class<?> clazz, Class<T> logClass) {
-      return Logger.getMessageLogger(logClass, clazz.getName());
+	public static ALogger getLog(Class<?> clazz) {
+	   
+		return new ALogger(clazz.getName());
+		
    }
 
    public static void pushNDC(String cacheName, boolean isTrace) {
